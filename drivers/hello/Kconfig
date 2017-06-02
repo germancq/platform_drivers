@@ -1,0 +1,7 @@
+menu "Hello Drivers"
+
+config HELLO
+  tristate "Hello World"
+  default y
+
+endmenu
