@@ -1,0 +1,3586 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\listings_params "language=C,keywordstyle={\color{blue}},commentstyle={\color{magenta}\itshape},emphstyle={\color{red}},breaklines=true,basicstyle={\ttfamily},stringstyle={\color{green}},identifierstyle={\color{cyan}}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+PLATFORM DRIVERS
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+Enlaces de interes
+\end_layout
+
+\begin_layout Standard
+Todos los ejemplos y situaciones de este documento estan basado en el kernel
+ v4.4.0
+\end_layout
+
+\begin_layout Standard
+Tutoriales sobre embedded linux : http://free-electrons.com/docs/ 
+\end_layout
+
+\begin_layout Standard
+Linux kernel navegador : http://elixir.free-electrons.com/linux/latest/source
+\end_layout
+
+\begin_layout Standard
+Kconfig doc : https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+\end_layout
+
+\begin_layout Standard
+Tutorial sobre linux drivers : http://www.tldp.org/LDP/lkmpg/2.6/html/lkmpg.html
+\end_layout
+
+\begin_layout Part
+Diferencia entre módulo y driver
+\end_layout
+
+\begin_layout Standard
+Ambos son en esencia lo mismo y su forma de programarse varia muy poco,
+ solo cuando son inicializados.
+ Un driver esta dentro del kernel y su carga es al iniciar el sistema, sin
+ embargo un módulo puede ser cargado y descargado del kernel segun sea de
+ interes para el usuario.
+ Es importante decir que si programamos un modulo podriamos hacer en el
+ fichero de configuracion hacer que se cargara como un driver, aunque lo
+ haria con la prioridad de carga más baja.
+\end_layout
+
+\begin_layout Standard
+A continuación veremos las prioridades de carga de drivers y modulos:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Boxed
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+file in: /include/linux/init.h
+\end_layout
+
+\begin_layout Plain Layout
+#define pure_initcall(fn)		__define_initcall(fn, 0)
+\end_layout
+
+\begin_layout Plain Layout
+#define core_initcall(fn)		__define_initcall(fn, 1)
+\end_layout
+
+\begin_layout Plain Layout
+#define core_initcall_sync(fn)		__define_initcall(fn, 1s)
+\end_layout
+
+\begin_layout Plain Layout
+#define postcore_initcall(fn)		__define_initcall(fn, 2)
+\end_layout
+
+\begin_layout Plain Layout
+#define postcore_initcall_sync(fn)	__define_initcall(fn, 2s)
+\end_layout
+
+\begin_layout Plain Layout
+#define arch_initcall(fn)		__define_initcall(fn, 3)
+\end_layout
+
+\begin_layout Plain Layout
+#define arch_initcall_sync(fn)		__define_initcall(fn, 3s)
+\end_layout
+
+\begin_layout Plain Layout
+#define subsys_initcall(fn)		__define_initcall(fn, 4)
+\end_layout
+
+\begin_layout Plain Layout
+#define subsys_initcall_sync(fn)	__define_initcall(fn, 4s)
+\end_layout
+
+\begin_layout Plain Layout
+#define fs_initcall(fn)			__define_initcall(fn, 5)
+\end_layout
+
+\begin_layout Plain Layout
+#define fs_initcall_sync(fn)		__define_initcall(fn, 5s)
+\end_layout
+
+\begin_layout Plain Layout
+#define rootfs_initcall(fn)		__define_initcall(fn, rootfs)
+\end_layout
+
+\begin_layout Plain Layout
+#define device_initcall(fn)		__define_initcall(fn, 6)
+\end_layout
+
+\begin_layout Plain Layout
+#define device_initcall_sync(fn)	__define_initcall(fn, 6s)
+\end_layout
+
+\begin_layout Plain Layout
+#define late_initcall(fn)		__define_initcall(fn, 7)
+\end_layout
+
+\begin_layout Plain Layout
+#define late_initcall_sync(fn)		__define_initcall(fn, 7s)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+#define __initcall(fn) device_initcall(fn)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Boxed
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+file in: /include/linux/module.h
+\end_layout
+
+\begin_layout Plain Layout
+/**  * module_init() - driver initialization entry point  
+\end_layout
+
+\begin_layout Plain Layout
+* @x: function to be run at kernel boot time or module insertion  *  
+\end_layout
+
+\begin_layout Plain Layout
+* module_init() will either be called during do_initcalls() 
+\end_layout
+
+\begin_layout Plain Layout
+(if  * builtin) or at module insertion time (if a module).
+\end_layout
+
+\begin_layout Plain Layout
+ There can only  * be one per module.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+*/ 
+\end_layout
+
+\begin_layout Plain Layout
+#define module_init(x)	__initcall(x);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+Estructura Kernel
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Descargas/linux-kernel-and-driver-development-training-20-638.jpg
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+El kernel de Linux se encarga de manejar los recursos hardware del sistema.
+ Proporciona al user space una API independiente del Hw y la arquitectura.Maneja
+ de forma concurrente el acceso al Hw.
+\end_layout
+
+\begin_layout Section*
+System Calls
+\end_layout
+
+\begin_layout Standard
+Es la principal interfaz de comunicación entre el kernel y el user space.
+ Linux hace la información del sistema y del kernel a traves de pseudo filesyste
+ms tambien denominados virtual filesystems.
+ Los pseudo filesystems permite a las aplicaciones ver directorios y ficheros
+ que no estan almacenados en ningun lugar, son creados y actualizados por
+ el kernel.
+\end_layout
+
+\begin_layout Standard
+Los 2 pseudo filesystems más importantes son:
+\end_layout
+
+\begin_layout Enumerate
+proc : usualmente montado en /proc.
+ Información relativa al sistema operativo (processes, memory management
+ parameters...).
+\end_layout
+
+\begin_layout Enumerate
+sysfs : usualmente montado en /sys.
+ Representación del sistema como un conjunto de buses y dispositivos.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+Conceptos Kernel Device Drivers
+\end_layout
+
+\begin_layout Section*
+Componentes
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Imágenes/kernel-and-device-drivers.png
+	scale 20
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+struct bus_type : representa un tipo de bus (I2C, USB, PCI, ...).
+ Proporcionan una API para la comunicacion con los devices y drivers segun
+ el tipo.
+\end_layout
+
+\begin_layout Enumerate
+struct device_driver : representa un driver que es capaz de manejar ciertos
+ dispositivos conectados a un tipo de bus.
+\end_layout
+
+\begin_layout Enumerate
+struct device : representa un dispositivo conectado a un bus.
+\end_layout
+
+\begin_layout Section*
+Estructuras básicas driver
+\end_layout
+
+\begin_layout Subsection*
+__init
+\end_layout
+
+\begin_layout Standard
+Cuando el driver es cargado se debe registrar, para ello usamos la funciones
+ vistas anteriormente.
+ Cuando se inicializa usara la función __init, por lo que es donde prepararemos
+ el setup de nuestro driver si requeriese de alguno.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Boxed
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+static int __init example_driver_init(void) {
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset space \quad{}
+\end_inset
+
+return example_register(&example_struct_driver);
+\end_layout
+
+\begin_layout Plain Layout
+}
+\end_layout
+
+\begin_layout Plain Layout
+subsys_initcall(example_driver_init);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+__exit
+\end_layout
+
+\begin_layout Standard
+Función usada cuando el driver es descargado del kernel.
+ Algunos drivers no contemplan esta situación ya que son drivers que no
+ deben descargarse del kernel.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Boxed
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+static void __exit example_driver_exit(void) {
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset space \quad{}
+\end_inset
+
+example_driver_unregister(&example_struct_driver);
+\end_layout
+
+\begin_layout Plain Layout
+} 
+\end_layout
+
+\begin_layout Plain Layout
+module_exit(example_driver_exit);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+probe()
+\end_layout
+
+\begin_layout Standard
+Es un método que recibe como argumento una estructura del dispositivo.
+ Es responsable de inicializar el dispositivo, cuando se conecta al bus.
+ La inicialización es correcta si return 0.
+\end_layout
+
+\begin_layout Subsection*
+remove()/disconnect(),...
+\end_layout
+
+\begin_layout Standard
+Es la contraparte del método probe(), tambien recibe como argumento una
+ estructura del dispositivo, y maneja cuando el dispositivo es desconectado
+ del bus.
+ La desconexión tiene éxito si return 0.
+\end_layout
+
+\begin_layout Subsection*
+identificadores
+\end_layout
+
+\begin_layout Standard
+Un driver puede manejar un conjunto de dispositivos que vienen definidos
+ por su vendorId y su productId, para ello se usa la macro MODULE_DEVICE_TABLE()
+ que permite en tiempo de compilación establecer una relación entre los
+ identificadores y los drivers.
+ A continuación un ejemplo de un driver USB.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Boxed
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+static struct usb_device_id rtl8150_table[] = 
+\end_layout
+
+\begin_layout Plain Layout
+{ 
+\end_layout
+
+\begin_layout Plain Layout
+{ USB_DEVICE(VENDOR_ID_REALTEK, PRODUCT_ID_RTL8150) },
+\end_layout
+
+\begin_layout Plain Layout
+{ USB_DEVICE(VENDOR_ID_MELCO, PRODUCT_ID_LUAKTX) },
+\end_layout
+
+\begin_layout Plain Layout
+{USB_DEVICE(VENDOR_ID_MICRONET, PRODUCT_ID_SP128AR)},
+\end_layout
+
+\begin_layout Plain Layout
+[...] 
+\end_layout
+
+\begin_layout Plain Layout
+{} 
+\end_layout
+
+\begin_layout Plain Layout
+};
+\end_layout
+
+\begin_layout Plain Layout
+MODULE_DEVICE_TABLE(usb, rtl8150_table);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Driver Struct
+\end_layout
+
+\begin_layout Standard
+la instanciación del driver es a traves de la estructura device_driver,
+ de la cual heredan los distintos drivers de cada bus.
+ En el se establecen las llamadas a ciertos metodos como son probe y disconnect
+ , con los metodos definidos por nosotros, junto con la tabla de identificadores
+ y un nombre para el driver.
+ Ademas de otros parametros que son especificos para cada bus y driver.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/**  /include/linux/device.h
+\end_layout
+
+\begin_layout Plain Layout
+
+* struct device_driver - The basic device driver structure  
+\end_layout
+
+\begin_layout Plain Layout
+
+* @name:	Name of the device driver.
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+* @bus:	The bus which the device of this driver belongs to.
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+* @owner:	The module owner.
+\end_layout
+
+\begin_layout Plain Layout
+
+* @mod_name:	Used for built-in modules.
+\end_layout
+
+\begin_layout Plain Layout
+
+* @suppress_bind_attrs: Disables bind/unbind via sysfs.
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+* @probe_type:	Type of the probe (synchronous or asynchronous) to use.
+\end_layout
+
+\begin_layout Plain Layout
+
+* @of_match_table: The open firmware table.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+* @acpi_match_table: The ACPI match table.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+* @probe:	Called to query the existence of a specific device,
+\end_layout
+
+\begin_layout Plain Layout
+
+*		whether this driver can work with it, and bind the driver 
+\end_layout
+
+\begin_layout Plain Layout
+
+*		to a specific device.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+* @remove:	Called when the device is removed from the system to 
+\end_layout
+
+\begin_layout Plain Layout
+
+*		unbind a device from this driver.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+* @shutdown:	Called at shut-down time to quiesce the device.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+* @suspend:	Called to put the device to sleep mode.
+ Usually to a  
+\end_layout
+
+\begin_layout Plain Layout
+
+*		low power state.
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+* @resume:	Called to bring a device from sleep mode.
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+* @groups:	Default attributes that get created by the driver core  
+\end_layout
+
+\begin_layout Plain Layout
+
+*		automatically.
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+* @pm:		Power management operations of the device which matched  
+\end_layout
+
+\begin_layout Plain Layout
+
+*		this driver.
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+* @p:		Driver core's private data, no one other than the driver  
+\end_layout
+
+\begin_layout Plain Layout
+
+*		core can touch this.
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+*  
+\end_layout
+
+\begin_layout Plain Layout
+
+* The device driver-model tracks all of the drivers known to the system.
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+* The main reason for this tracking is to enable the driver core to match
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+* up drivers with new devices.
+ Once drivers are known objects within the  
+\end_layout
+
+\begin_layout Plain Layout
+
+* system, however, a number of other things become possible.
+ Device drivers  
+\end_layout
+
+\begin_layout Plain Layout
+
+* can export information and configuration variables that are independent
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+* of any specific device.
+  
+\end_layout
+
+\begin_layout Plain Layout
+
+*/
+\end_layout
+
+\begin_layout Plain Layout
+
+struct device_driver {
+\end_layout
+
+\begin_layout Plain Layout
+
+	const char		*name;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct bus_type		*bus;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct module		*owner;
+\end_layout
+
+\begin_layout Plain Layout
+
+	const char		*mod_name;	/* used for built-in modules */
+\end_layout
+
+\begin_layout Plain Layout
+
+	bool suppress_bind_attrs;	/* disables bind/unbind via sysfs */
+\end_layout
+
+\begin_layout Plain Layout
+
+	enum probe_type probe_type;
+\end_layout
+
+\begin_layout Plain Layout
+
+	const struct of_device_id	*of_match_table;
+\end_layout
+
+\begin_layout Plain Layout
+
+	const struct acpi_device_id	*acpi_match_table;
+\end_layout
+
+\begin_layout Plain Layout
+
+	int (*probe) (struct device *dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	int (*remove) (struct device *dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	void (*shutdown) (struct device *dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	int (*suspend) (struct device *dev, pm_message_t state);
+\end_layout
+
+\begin_layout Plain Layout
+
+	int (*resume) (struct device *dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	const struct attribute_group **groups;
+\end_layout
+
+\begin_layout Plain Layout
+
+	const struct dev_pm_ops *pm;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct driver_private *p; 
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Boxed
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+static struct usb_driver rtl8150_driver = {
+\end_layout
+
+\begin_layout Plain Layout
+.name = "rtl8150",
+\end_layout
+
+\begin_layout Plain Layout
+.probe = rtl8150_probe,
+\end_layout
+
+\begin_layout Plain Layout
+.disconnect = rtl8150_disconnect,
+\end_layout
+
+\begin_layout Plain Layout
+.id_table = rtl8150_table,
+\end_layout
+
+\begin_layout Plain Layout
+.suspend = rtl8150_suspend,
+\end_layout
+
+\begin_layout Plain Layout
+.resume = rtl8150_resume
+\end_layout
+
+\begin_layout Plain Layout
+};
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Conceptos
+\end_layout
+
+\begin_layout Standard
+Los driver requieren de cierta información sobre ellos mismos, esta información
+ se puede suministrar a traves de las siguientes macros:
+\end_layout
+
+\begin_layout Enumerate
+MODULE_AUTHOR() : especifica el programador del driver.
+\end_layout
+
+\begin_layout Enumerate
+MODULE_DESCRIPTION() : descripción sobre el driver.
+\end_layout
+
+\begin_layout Enumerate
+MODULE_LICENSE() : licencia del driver, por ejemplo GPL.
+\end_layout
+
+\begin_layout Standard
+Desde un driver/modulo del kernel solo tiene un limitado numero de funciones
+ del kernel que pueden ser llamadas.
+ Las funciones que se pueden usar y ser visibles por otros se hacen a traves
+ de las siguientes macros:
+\end_layout
+
+\begin_layout Enumerate
+EXPORT_SYMBOL(fn/var) : exporta la funcion o variable al resto de modulos/driver
+s.
+\end_layout
+
+\begin_layout Enumerate
+EXPORT_SYMBOL_GPL(fn/var) : exporta la funcion o variable solo a los modulos/dri
+vers con licencia GPL.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Imágenes/export-symbols-kernel.png
+	scale 20
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Inicialización
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Imágenes/driver_ini.png
+	scale 20
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Conexión dispositivo
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Imágenes/when-device-detected.png
+	scale 20
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+Platform Drivers
+\end_layout
+
+\begin_layout Subsection*
+Introducción
+\end_layout
+
+\begin_layout Standard
+En los embedded systems, los dispositivos no estan normalmente conectados
+ traves de un bus permitiendo asi la enumeración, hotpluggin y dando identificad
+ores unicos para los dispositivos.
+\end_layout
+
+\begin_layout Standard
+Muchos de los dispositivos son parte directa del SoC, sin embargo queremos
+ que esos dispositivos sigan el modelo de driver visto en la sección anterior.
+\end_layout
+
+\begin_layout Standard
+Por lo tanto estos dispositivos en vez de ser detectados dinamicamente sera
+ descritos en el Device Tree.
+\end_layout
+
+\begin_layout Standard
+En el kernel de Linux existe un bus especial denominado platform bus que
+ ha sido creado para manejar este tipo de dispositivos.
+ Tiene asociado platform drivers y platform devices.
+\end_layout
+
+\begin_layout Subsection*
+Platform Driver
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/* /include/linux/platform_device.h */
+\end_layout
+
+\begin_layout Plain Layout
+
+struct platform_driver {
+\end_layout
+
+\begin_layout Plain Layout
+
+	int (*probe)(struct platform_device *);
+\end_layout
+
+\begin_layout Plain Layout
+
+	int (*remove)(struct platform_device *);
+\end_layout
+
+\begin_layout Plain Layout
+
+	void (*shutdown)(struct platform_device *);
+\end_layout
+
+\begin_layout Plain Layout
+
+	int (*suspend)(struct platform_device *, pm_message_t state);
+\end_layout
+
+\begin_layout Plain Layout
+
+	int (*resume)(struct platform_device *);
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct device_driver driver;
+\end_layout
+
+\begin_layout Plain Layout
+
+	const struct platform_device_id *id_table;
+\end_layout
+
+\begin_layout Plain Layout
+
+	bool prevent_deferred_probe;
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+static struct platform_driver serial_imx_driver = {
+\end_layout
+
+\begin_layout Plain Layout
+
+	.probe = serial_imx_probe,
+\end_layout
+
+\begin_layout Plain Layout
+
+	.remove = serial_imx_remove,
+\end_layout
+
+\begin_layout Plain Layout
+
+	.id_table = imx_uart_devtype,
+\end_layout
+
+\begin_layout Plain Layout
+
+	.driver = {
+\end_layout
+
+\begin_layout Plain Layout
+
+		.name = "imx-uart",
+\end_layout
+
+\begin_layout Plain Layout
+
+		.of_match_table = imx_uart_dt_ids,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.pm = &imx_serial_port_pm_ops, 
+\end_layout
+
+\begin_layout Plain Layout
+
+	},
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Platform Device
+\end_layout
+
+\begin_layout Standard
+Los platform devices no son detectados dinamicamente, por ello son definidos
+ estaticamente en el Device Tree.
+\end_layout
+
+\begin_layout Standard
+A continuación veremos con mas detalle un Device Tree.
+\end_layout
+
+\begin_layout Subsubsection*
+Device Tree
+\end_layout
+
+\begin_layout Standard
+La estructura del device tree se basa en un conjunto de nodos que contienen
+ una serie de propiedades, estas propiedades son parejas clave-valor.
+ un nodo su vez puede contener otros nodos.
+ Los dispositivos son representados como nodos.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/dts-v1/;
+\end_layout
+
+\begin_layout Plain Layout
+
+/ {
+\end_layout
+
+\begin_layout Plain Layout
+
+    node1 {
+\end_layout
+
+\begin_layout Plain Layout
+
+      	a-string-property = "A string";
+\end_layout
+
+\begin_layout Plain Layout
+
+ 	     a-string-list-property = "first string", "second string";
+\end_layout
+
+\begin_layout Plain Layout
+
+          // hex is implied in byte arrays.
+ no '0x' prefix is required
+\end_layout
+
+\begin_layout Plain Layout
+
+          a-byte-data-property = [01 23 34 56];
+\end_layout
+
+\begin_layout Plain Layout
+
+          child-node1 {
+\end_layout
+
+\begin_layout Plain Layout
+
+ 	           first-child-property;
+\end_layout
+
+\begin_layout Plain Layout
+
+                second-child-property = <1>;
+\end_layout
+
+\begin_layout Plain Layout
+
+                a-string-property = "Hello, world";
+\end_layout
+
+\begin_layout Plain Layout
+
+         };
+\end_layout
+
+\begin_layout Plain Layout
+
+        child-node2 {
+\end_layout
+
+\begin_layout Plain Layout
+
+        };
+\end_layout
+
+\begin_layout Plain Layout
+
+    };
+\end_layout
+
+\begin_layout Plain Layout
+
+   node2 {
+\end_layout
+
+\begin_layout Plain Layout
+
+        an-empty-property;
+\end_layout
+
+\begin_layout Plain Layout
+
+        a-cell-property = <1 2 3 4>; /* each number (cell) is a uint32 */
+\end_layout
+
+\begin_layout Plain Layout
+
+        child-node1 {
+\end_layout
+
+\begin_layout Plain Layout
+
+        };
+\end_layout
+
+\begin_layout Plain Layout
+
+    };
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+La estructura siempre comienza con el nodo raiz cuyo nobre es 
+\begin_inset Quotes eld
+\end_inset
+
+/
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+existen ciertas propiedades que se deben conocer:
+\end_layout
+
+\begin_layout Subsubsection*
+compatible = 
+\begin_inset Quotes eld
+\end_inset
+
+manufacter, model
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+identifica el dispositivo con el driver que lo maneja.
+ Todo dispositivo requiere de esta propiedad.
+ Se enlaza con el driver a traves del campo of_match_table del device_driver.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+dev0: exampleDevice {
+\end_layout
+
+\begin_layout Plain Layout
+
+        compatible = "dte,exampleDriver";
+\end_layout
+
+\begin_layout Plain Layout
+
+    };
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+static const struct of_device_id example_driver_of_match[] = {
+\end_layout
+
+\begin_layout Plain Layout
+
+	{ .compatible = "dte,exampleDriver" },
+\end_layout
+
+\begin_layout Plain Layout
+
+	{},
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\begin_layout Plain Layout
+
+MODULE_DEVICE_TABLE(of, example_driver_of_match);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static struct platform_driver example_driver = {
+\end_layout
+
+\begin_layout Plain Layout
+
+	.probe = example_driver_probe,
+\end_layout
+
+\begin_layout Plain Layout
+
+	.remove = example_driver_remove,
+\end_layout
+
+\begin_layout Plain Layout
+
+	.driver = {
+\end_layout
+
+\begin_layout Plain Layout
+
+		.name = DRIVER_NAME,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.of_match_table = of_match_ptr(example_driver_of_match),
+\end_layout
+
+\begin_layout Plain Layout
+
+	},
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+nombre nodos 
+\end_layout
+
+\begin_layout Standard
+la convencion de los nombres es la siguiente etiqueta: name@address, pero
+ podria ser cualquiera que queramos.
+ Al usar la etiqueta podremos usar el nodo en otras partes del device tree
+ de la siguiente forma &etiqueta.
+\end_layout
+
+\begin_layout Subsubsection*
+direccionamiento 
+\end_layout
+
+\begin_layout Standard
+para el direccionamiento se usan las siguientes propiedades: reg, #address-cells
+, #size-cells.
+\end_layout
+
+\begin_layout Standard
+Cada dispositivo contiene la propiedad reg que se forma de la siguiente
+ manera, reg = <add1 len1 add2 len2 ...> que representa el rango de direcciones
+ del dispositivo.
+ 
+\end_layout
+
+\begin_layout Standard
+Cada direccion es una lista con elementos de 32 bits denominado cells, la
+ longitud puede ser una lista de cells o vacio.
+\end_layout
+
+\begin_layout Standard
+la longitud de la lista se resuelve con los valores #address-cells y #size-cells
+ del nodo padre más cercano.
+\end_layout
+
+\begin_layout Subsubsection*
+Interrupciones
+\end_layout
+
+\begin_layout Standard
+Son necesarias 4 propiedades para describir las interrupciones en un sistema.
+\end_layout
+
+\begin_layout Enumerate
+interrupt-controller : propiedad vacia, se localiza en el nodo cuyo dispositivo
+ recibe las señales de interrupcion, el interrupt Controller.
+\end_layout
+
+\begin_layout Enumerate
+#interrupt-cells : especifia el numero de cells existen en la propiedad
+ interrupts.
+ Se localiza en el interrupt Controller.
+\end_layout
+
+\begin_layout Enumerate
+interrupt-parent : propiedad que contiene un phandle al interrupt controller.
+\end_layout
+
+\begin_layout Enumerate
+interrupts : propiedad que se encuentra en cada dispositivo que genera interrupc
+iones y especifica una lista de interrupt specifiers que segun el interrupt
+ controller manejara e interpretara de una forma.
+\end_layout
+
+\begin_layout Subsubsection*
+include
+\end_layout
+
+\begin_layout Standard
+la directiva #include permite añadir un dts a otro tal y como vemos en la
+ siguiente imagen.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Imágenes/include_dts_good.png
+	scale 20
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Ejemplo DTS
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/dts-v1/;
+\end_layout
+
+\begin_layout Plain Layout
+
+/ {
+\end_layout
+
+\begin_layout Plain Layout
+
+    compatible = "acme,coyotes-revenge";
+\end_layout
+
+\begin_layout Plain Layout
+
+    #address-cells = <1>;
+\end_layout
+
+\begin_layout Plain Layout
+
+    #size-cells = <1>;
+\end_layout
+
+\begin_layout Plain Layout
+
+    interrupt-parent = <&intc>;
+\end_layout
+
+\begin_layout Plain Layout
+
+    cpus {
+\end_layout
+
+\begin_layout Plain Layout
+
+        #address-cells = <1>;
+\end_layout
+
+\begin_layout Plain Layout
+
+        #size-cells = <0>;
+\end_layout
+
+\begin_layout Plain Layout
+
+        cpu@0 {
+\end_layout
+
+\begin_layout Plain Layout
+
+            compatible = "arm,cortex-a9";
+\end_layout
+
+\begin_layout Plain Layout
+
+			// cada CPU se asocia con un UID,
+\end_layout
+
+\begin_layout Plain Layout
+
+			// el size es vacio ya que la cpu esta asociada a un unica direccion
+\end_layout
+
+\begin_layout Plain Layout
+
+            reg = <0>;
+\end_layout
+
+\begin_layout Plain Layout
+
+        };
+\end_layout
+
+\begin_layout Plain Layout
+
+        cpu@1 {
+\end_layout
+
+\begin_layout Plain Layout
+
+            compatible = "arm,cortex-a9";
+\end_layout
+
+\begin_layout Plain Layout
+
+            reg = <1>;
+\end_layout
+
+\begin_layout Plain Layout
+
+        };
+\end_layout
+
+\begin_layout Plain Layout
+
+    };
+\end_layout
+
+\begin_layout Plain Layout
+
+    serial@101f0000 {
+\end_layout
+
+\begin_layout Plain Layout
+
+        compatible = "arm,pl011";
+\end_layout
+
+\begin_layout Plain Layout
+
+        reg = <0x101f0000 0x1000 >;
+\end_layout
+
+\begin_layout Plain Layout
+
+        interrupts = < 1 0 >;
+\end_layout
+
+\begin_layout Plain Layout
+
+    };
+\end_layout
+
+\begin_layout Plain Layout
+
+    serial@101f2000 {
+\end_layout
+
+\begin_layout Plain Layout
+
+        compatible = "arm,pl011";
+\end_layout
+
+\begin_layout Plain Layout
+
+        reg = <0x101f2000 0x1000 >;
+\end_layout
+
+\begin_layout Plain Layout
+
+        interrupts = < 2 0 >;
+\end_layout
+
+\begin_layout Plain Layout
+
+    };
+\end_layout
+
+\begin_layout Plain Layout
+
+    gpio@101f3000 {
+\end_layout
+
+\begin_layout Plain Layout
+
+        compatible = "arm,pl061";
+\end_layout
+
+\begin_layout Plain Layout
+
+		// el dispositivo esta en las regiones
+\end_layout
+
+\begin_layout Plain Layout
+
+		// 0x101f3000 - 0x101f4000
+\end_layout
+
+\begin_layout Plain Layout
+
+		// 0x101f4000 - 0x101f4010
+\end_layout
+
+\begin_layout Plain Layout
+
+        reg = <0x101f3000 0x1000
+\end_layout
+
+\begin_layout Plain Layout
+
+               0x101f4000 0x0010>;
+\end_layout
+
+\begin_layout Plain Layout
+
+        interrupts = < 3 0 >;
+\end_layout
+
+\begin_layout Plain Layout
+
+    };
+\end_layout
+
+\begin_layout Plain Layout
+
+    intc: interrupt-controller@10140000 {
+\end_layout
+
+\begin_layout Plain Layout
+
+        compatible = "arm,pl190";
+\end_layout
+
+\begin_layout Plain Layout
+
+        reg = <0x10140000 0x1000 >;
+\end_layout
+
+\begin_layout Plain Layout
+
+        interrupt-controller;
+\end_layout
+
+\begin_layout Plain Layout
+
+		// 2 cells, la primera identifica la interrupcion
+\end_layout
+
+\begin_layout Plain Layout
+
+		// y el segundo valor codifica el flag 
+\end_layout
+
+\begin_layout Plain Layout
+
+		// tal que activo alta vs activa baja, edge vs level sensitive,...
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+		// ver especificaciones del controlador
+\end_layout
+
+\begin_layout Plain Layout
+
+        #interrupt-cells = <2>; 
+\end_layout
+
+\begin_layout Plain Layout
+
+    };
+\end_layout
+
+\begin_layout Plain Layout
+
+    spi@10115000 {
+\end_layout
+
+\begin_layout Plain Layout
+
+        compatible = "arm,pl022";
+\end_layout
+
+\begin_layout Plain Layout
+
+        reg = <0x10115000 0x1000 >;
+\end_layout
+
+\begin_layout Plain Layout
+
+        interrupts = < 4 0 >;
+\end_layout
+
+\begin_layout Plain Layout
+
+    };
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+DTS - Kernel
+\end_layout
+
+\begin_layout Standard
+La manera más habitual de acceder a las propiedades del DTS desde el kernel
+ es a traves del método of_get_property()
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/* /drivers/of/base.c */
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/* 
+\end_layout
+
+\begin_layout Plain Layout
+
+ * Find a property with a given name for a given node
+\end_layout
+
+\begin_layout Plain Layout
+
+ * and return the value.
+\end_layout
+
+\begin_layout Plain Layout
+
+*/
+\end_layout
+
+\begin_layout Plain Layout
+
+const void *of_get_property(const struct device_node *np, const char *name,
+\end_layout
+
+\begin_layout Plain Layout
+
+			    int *lenp) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct property *pp = of_find_property(np, name, lenp);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return pp ? pp->value : NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+EXPORT_SYMBOL(of_get_property);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+struct property *of_find_property(const struct device_node *np,
+\end_layout
+
+\begin_layout Plain Layout
+
+				  const char *name,
+\end_layout
+
+\begin_layout Plain Layout
+
+				  int *lenp) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct property *pp;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned long flags;
+\end_layout
+
+\begin_layout Plain Layout
+
+	raw_spin_lock_irqsave(&devtree_lock,flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	//seccion critica
+\end_layout
+
+\begin_layout Plain Layout
+
+	pp = __of_find_property(np, name, lenp);
+\end_layout
+
+\begin_layout Plain Layout
+
+	//fin seccion critica
+\end_layout
+
+\begin_layout Plain Layout
+
+	raw_spin_unlock_irqrestore(&devtree_lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return pp;
+\end_layout
+
+\begin_layout Plain Layout
+
+} 
+\end_layout
+
+\begin_layout Plain Layout
+
+EXPORT_SYMBOL(of_find_property);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static struct property *__of_find_property(const struct device_node *np,
+\end_layout
+
+\begin_layout Plain Layout
+
+					   const char *name, int *lenp) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct property *pp;
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!np)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	for (pp = np->properties; pp; pp = pp->next) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (of_prop_cmp(pp->name, name) == 0) {
+\end_layout
+
+\begin_layout Plain Layout
+
+			if (lenp)
+\end_layout
+
+\begin_layout Plain Layout
+
+				*lenp = pp->length;
+\end_layout
+
+\begin_layout Plain Layout
+
+			break;
+\end_layout
+
+\begin_layout Plain Layout
+
+		}
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	return pp;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/* /include/linux/of.h */
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#define of_prop_cmp(s1, s2)		strcmp((s1), (s2))
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+struct property {
+\end_layout
+
+\begin_layout Plain Layout
+
+	char	*name;
+\end_layout
+
+\begin_layout Plain Layout
+
+	int	length;
+\end_layout
+
+\begin_layout Plain Layout
+
+	void	*value;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct property *next;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned long _flags;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned int unique_id;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct bin_attribute attr;
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+struct device_node {
+\end_layout
+
+\begin_layout Plain Layout
+
+	const char *name;
+\end_layout
+
+\begin_layout Plain Layout
+
+	const char *type;
+\end_layout
+
+\begin_layout Plain Layout
+
+	phandle phandle;
+\end_layout
+
+\begin_layout Plain Layout
+
+	const char *full_name;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct fwnode_handle fwnode;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct	property *properties;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct	property *deadprops;	/* removed properties */
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct	device_node *parent;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct	device_node *child;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct	device_node *sibling;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct	kobject kobj;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned long _flags;
+\end_layout
+
+\begin_layout Plain Layout
+
+	void	*data;
+\end_layout
+
+\begin_layout Plain Layout
+
+#if defined(CONFIG_SPARC)
+\end_layout
+
+\begin_layout Plain Layout
+
+	const char *path_component_name;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned int unique_id;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct of_irq_controller *irq_trans;
+\end_layout
+
+\begin_layout Plain Layout
+
+#endif
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+Programación Kernel
+\end_layout
+
+\begin_layout Standard
+El kernel esta implementado en su mayoria en C y una parte en ensamblador.
+ Todo el codigo es compilado con gcc.
+ El kernel debe ser independiente del user space, por ello no se pueden
+ usar las librerias estandar de C, sin embargo el kernel proporciona funciones
+ similares.
+\end_layout
+
+\begin_layout Standard
+A continuacion veremos algunas de las funciones más recurrentes a lo largo
+ del código.
+\end_layout
+
+\begin_layout Subsection*
+Linked Lists
+\end_layout
+
+\begin_layout Standard
+se incluye en /include/linux/list.h y es usado continuamente en el kernel.
+ Se añade una struct list_head a la estructura cuya instancias seran parte
+ de la lista.
+ La lista si es usada como variable global se define con la macro LIST_HEAD(),
+ si no se define un elemento struct list_head y se inicializa con INIT_LIST_HEAD
+().
+\end_layout
+
+\begin_layout Standard
+Los metodos mas relevantes son:
+\end_layout
+
+\begin_layout Enumerate
+añadir elementos : list_add(), list_add_tail()
+\end_layout
+
+\begin_layout Enumerate
+borrar elementos : list_del()
+\end_layout
+
+\begin_layout Enumerate
+mover elementos : list_move(), list_move_tail()
+\end_layout
+
+\begin_layout Enumerate
+reemplazar elementos : list_replace()
+\end_layout
+
+\begin_layout Enumerate
+Iterar sobre la lista : list_for_each(), list_for_each_entry()
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/*/include/linux/types.h*/
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ struct list_head {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct list_head *next, *prev;
+\end_layout
+
+\begin_layout Plain Layout
+
+ };
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*/include/linux/list.h*/
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ /*INICIALIZACION*/
+\end_layout
+
+\begin_layout Plain Layout
+
+ #define LIST_HEAD_INIT(name) { &(name), &(name) }
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ #define LIST_HEAD(name) 
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct list_head name = LIST_HEAD_INIT(name)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ static inline void INIT_LIST_HEAD(struct list_head *list) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	list->next = list;
+\end_layout
+
+\begin_layout Plain Layout
+
+	list->prev = list;
+\end_layout
+
+\begin_layout Plain Layout
+
+ }
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ /*AÑADIR ELEMENTOS*/
+\end_layout
+
+\begin_layout Plain Layout
+
+//[prev <-> new <-> next]
+\end_layout
+
+\begin_layout Plain Layout
+
+ static inline void __list_add(struct list_head *new,
+\end_layout
+
+\begin_layout Plain Layout
+
+			      struct list_head *prev,
+\end_layout
+
+\begin_layout Plain Layout
+
+			      struct list_head *next) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	next->prev = new;
+\end_layout
+
+\begin_layout Plain Layout
+
+	new->next = next;
+\end_layout
+
+\begin_layout Plain Layout
+
+	new->prev = prev;
+\end_layout
+
+\begin_layout Plain Layout
+
+	prev->next = new;
+\end_layout
+
+\begin_layout Plain Layout
+
+ }
+\end_layout
+
+\begin_layout Plain Layout
+
+//[head new head->next]
+\end_layout
+
+\begin_layout Plain Layout
+
+/**
+\end_layout
+
+\begin_layout Plain Layout
+
+ * list_add - add a new entry
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @new: new entry to be added
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @head: list head to add it after
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * Insert a new entry after the specified head.
+\end_layout
+
+\begin_layout Plain Layout
+
+ * This is good for implementing stacks.
+\end_layout
+
+\begin_layout Plain Layout
+
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+static inline void list_add(struct list_head *new, struct list_head *head)
+ {
+\end_layout
+
+\begin_layout Plain Layout
+
+	__list_add(new, head, head->next);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+//[head->prev new head]
+\end_layout
+
+\begin_layout Plain Layout
+
+/**
+\end_layout
+
+\begin_layout Plain Layout
+
+ * list_add_tail - add a new entry
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @new: new entry to be added
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @head: list head to add it before
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * Insert a new entry before the specified head.
+\end_layout
+
+\begin_layout Plain Layout
+
+ * This is useful for implementing queues.
+\end_layout
+
+\begin_layout Plain Layout
+
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+static inline void list_add_tail(struct list_head *new, struct list_head
+ *head) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	__list_add(new, head->prev, head);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*ITERACION*/
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#define list_for_each(pos, head) 
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	for (pos = (head)->next; pos != (head); pos = pos->next)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/**/
+\end_layout
+
+\begin_layout Plain Layout
+
+/* /include/linux/kernel.h *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * container_of - cast a member of a structure out to the containing structure
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @ptr:	the pointer to the member.
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @type:	the type of the container struct this is embedded in.
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @member:	the name of the member within the struct.
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+  /*
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct container_struct{
+\end_layout
+
+\begin_layout Plain Layout
+
+		struct member_struct member_name
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct member_struct *mm = INIT_MEMBER_EXAMPLE() 
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct container_struct *container = container_of(mm, container_struct,
+ member_name)
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	*/
+\end_layout
+
+\begin_layout Plain Layout
+
+#define container_of(ptr, type, member) ({	
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+			  	const typeof( ((type *)0)->member ) *__mptr = (ptr);	
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+				  (type *)( (char *)__mptr - offsetof(type,member) );})
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#define list_entry(ptr, type, member) 
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	container_of(ptr, type, member)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#define list_first_entry(ptr, type, member) 
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	list_entry((ptr)->next, type, member)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#define list_next_entry(pos, member) 
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	list_entry((pos)->member.next, typeof(*(pos)), member)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#define list_for_each_entry(pos, head, member)				
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	for (pos = list_first_entry(head, typeof(*pos), member);	
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	     &pos->member != (head);					
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	     pos = list_next_entry(pos, member))
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/* Ejemplos */
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+struct atmel_tc {
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* some members */
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct list_head node;
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/* Define the global list */
+\end_layout
+
+\begin_layout Plain Layout
+
+static LIST_HEAD(tc_list);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static int __init tc_probe(struct platform_device *pdev) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct atmel_tc *tc;
+\end_layout
+
+\begin_layout Plain Layout
+
+	tc = kzalloc(sizeof(struct atmel_tc), GFP_KERNEL);
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* Add an element to the list */
+\end_layout
+
+\begin_layout Plain Layout
+
+	list_add_tail(&tc->node, &tc_list);
+\end_layout
+
+\begin_layout Plain Layout
+
+	/*
+\end_layout
+
+\begin_layout Plain Layout
+
+		tc_list -> prev = node
+\end_layout
+
+\begin_layout Plain Layout
+
+		tc_list -> prev -> next = node
+\end_layout
+
+\begin_layout Plain Layout
+
+		
+\end_layout
+
+\begin_layout Plain Layout
+
+		elementos_tc_list ...
+ node.
+\end_layout
+
+\begin_layout Plain Layout
+
+		
+\end_layout
+
+\begin_layout Plain Layout
+
+	*/
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+struct atmel_tc *atmel_tc_alloc(unsigned block, const char *name) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct atmel_tc *tc;
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* Iterate over the list elements */
+\end_layout
+
+\begin_layout Plain Layout
+
+	list_for_each_entry(tc, &tc_list, node) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		/* Do something with tc */ 
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	[...]
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Kmalloc
+\end_layout
+
+\begin_layout Standard
+Es la funcion para reservar espacio de memoria en el kernel.
+\end_layout
+
+\begin_layout Subsubsection*
+Flags
+\end_layout
+
+\begin_layout Standard
+Estas son las más usadas, el resto pueden encontrase en include/linux/gfp.h
+\end_layout
+
+\begin_layout Enumerate
+GFP_KERNEL : reserva de memoria estandar, la reserva puede bloquearse para
+ poder encontrar suficiente memoria disponible.
+\end_layout
+
+\begin_layout Enumerate
+GFP_ATOMIC : reserva de RAM, no esta permitido el bloqueo, puede fallar
+ si no hay memoria libre disponible.
+\end_layout
+
+\begin_layout Enumerate
+GFP_DMA : reserva memoria en el area fisica usada por el DMA.
+\end_layout
+
+\begin_layout Subsubsection*
+API
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+*reserva size bytes y devuelveun puntero al area en memoria virtual
+\end_layout
+
+\begin_layout Plain Layout
+
+*/
+\end_layout
+
+\begin_layout Plain Layout
+
+void *kmalloc(size_t size, int flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+void kfree(const void *objp);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*inicializa a 0*/
+\end_layout
+
+\begin_layout Plain Layout
+
+void *kzalloc(size_t size, gfp_t flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/* reserva memoria para un array de n elementos de tamaño size y los inicializa
+ a 0*/
+\end_layout
+
+\begin_layout Plain Layout
+
+void *kcalloc(size_t n, size_t size, gfp_t flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*cambia el tamaño del buffer apuntado por p a new_size*/
+\end_layout
+
+\begin_layout Plain Layout
+
+void *krealloc(const void *p, size_t new_size, gfp_t flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+	Las siguientes funciones liberan el espacio de memoria
+\end_layout
+
+\begin_layout Plain Layout
+
+	automaticamente cuando el dispositivo se desconecta
+\end_layout
+
+\begin_layout Plain Layout
+
+	o falla en la inicializacion, por ello se usan en probe()
+\end_layout
+
+\begin_layout Plain Layout
+
+*/
+\end_layout
+
+\begin_layout Plain Layout
+
+void *devm_kmalloc(struct device *dev, size_t size, int flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+void *devm_kzalloc(struct device *dev, size_t size, int flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+void *devm_kcalloc(struct device *dev, size_t n, size_t size, gfp_t flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+void *devm_kfree(struct device *dev, void *p);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+IO memory
+\end_layout
+
+\begin_layout Subsubsection*
+mapeado en memoria virtual
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+	https://lkml.org/lkml/2004/9/12/249
+\end_layout
+
+\begin_layout Plain Layout
+
+	iomem implica que nunca sera desreferenciado por ser un puntero noderef
+\end_layout
+
+\begin_layout Plain Layout
+
+	y esta en el espacio de memoria 2, diferente al normal que es 0
+\end_layout
+
+\begin_layout Plain Layout
+
+*/
+\end_layout
+
+\begin_layout Plain Layout
+
+# define __iomem	__attribute__((noderef, address_space(2)))
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+void __iomem *ioremap(phys_addr_t phys_addr, unsigned long size);
+\end_layout
+
+\begin_layout Plain Layout
+
+void iounmap(void __iomem *addr);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*en device drivers estas funciones estan deprecadas y se usan las siguientes*/
+\end_layout
+
+\begin_layout Plain Layout
+
+void __iomem *devm_ioremap(struct device *dev, resource_size_t offset,resource_s
+ize_t size);
+\end_layout
+
+\begin_layout Plain Layout
+
+void devm_iounmap(struct device *dev, void __iomem *addr);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename Imágenes/ioremap().png
+	scale 20
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+R/W
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+unsigned int ioread8(void __iomem *addr)
+\end_layout
+
+\begin_layout Plain Layout
+
+unsigned int ioread16(void __iomem *addr)
+\end_layout
+
+\begin_layout Plain Layout
+
+unsigned int ioread32(void __iomem *addr)
+\end_layout
+
+\begin_layout Plain Layout
+
+unsigned int ioread16be(void __iomem *addr)
+\end_layout
+
+\begin_layout Plain Layout
+
+unsigned int ioread32be(void __iomem *addr)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+void iowrite8(u8 val, void __iomem *addr)
+\end_layout
+
+\begin_layout Plain Layout
+
+void iowrite16(u16 val, void __iomem *addr)
+\end_layout
+
+\begin_layout Plain Layout
+
+void iowrite32(u32 val, void __iomem *addr)
+\end_layout
+
+\begin_layout Plain Layout
+
+void iowrite16be(u16 val, void __iomem *addr)
+\end_layout
+
+\begin_layout Plain Layout
+
+void iowrite32be(u32 val, void __iomem *addr)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Spinlocks
+\end_layout
+
+\begin_layout Standard
+locks usados para las secciones criticas o interrupt handles.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/*INICIALIZACION*/
+\end_layout
+
+\begin_layout Plain Layout
+
+DEFINE_SPINLOCK(my_lock);
+\end_layout
+
+\begin_layout Plain Layout
+
+void spin_lock_init(spinlock_t *lock);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*VARIANTES*/
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*No desactiva interrupciones*/
+\end_layout
+
+\begin_layout Plain Layout
+
+void spin_lock(spinlock_t *lock);
+\end_layout
+
+\begin_layout Plain Layout
+
+void spin_unlock(spinlock_t *lock);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*Desactiva las IRQ, guarda el estado en flags al  bloquear y devuelve su
+ valor al continuar*/
+\end_layout
+
+\begin_layout Plain Layout
+
+void spin_lock_irqsave(spinlock_t *lock, unsigned long flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+void spin_unlock_irqrestore(spinlock_t *lock, unsigned long flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*Desactiva las interrupciones software*/
+\end_layout
+
+\begin_layout Plain Layout
+
+void spin_lock_bh(spinlock_t *lock);
+\end_layout
+
+\begin_layout Plain Layout
+
+void spin_unlock_bh(spinlock_t *lock);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+AÑADIR DRIVER
+\end_layout
+
+\begin_layout Standard
+En esta parte deberos ver 2 ficheros el Kconfig y Makefile en el directorio
+ donde tenemos el codigo fuente de nuestro driver.
+ /linux/drivers/....
+\end_layout
+
+\begin_layout Section*
+Makefile
+\end_layout
+
+\begin_layout Standard
+para añadir nuestro driver le diremos al fichero que hay un objeto en el
+ directorio que debe compilarse
+\end_layout
+
+\begin_layout Standard
+Ejemplo:
+\end_layout
+
+\begin_layout Standard
+codigo fuente: driver_source_code.c
+\end_layout
+
+\begin_layout Standard
+Makefile:
+\end_layout
+
+\begin_layout Standard
+obj-x += driver_source-code.o
+\end_layout
+
+\begin_layout Standard
+donde x puede tomar los siguientes valores:
+\end_layout
+
+\begin_layout Standard
+y (built-in) 
+\end_layout
+
+\begin_layout Standard
+m (module)
+\end_layout
+
+\begin_layout Standard
+n (no loaded)
+\end_layout
+
+\begin_layout Standard
+CONFIG_X : donde X es un identificador del fichero kbuild
+\end_layout
+
+\begin_layout Section*
+Kbuild
+\end_layout
+
+\begin_layout Standard
+El fichero Kbuild en un fichero de configuración.
+\end_layout
+
+\begin_layout Standard
+veremos algunas estructuras
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/*se mostrara un menu de configuración con el nombre*/
+\end_layout
+
+\begin_layout Plain Layout
+
+menu "nombre"
+\end_layout
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+endmenu
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*carga ficheros kbuild de otros directorios*/
+\end_layout
+
+\begin_layout Plain Layout
+
+source "directorio"
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+ * entradas de configuracion
+\end_layout
+
+\begin_layout Plain Layout
+
+ * tipos : triestate (y,m,n)
+\end_layout
+
+\begin_layout Plain Layout
+
+ *         bool (y,n)
+\end_layout
+
+\begin_layout Plain Layout
+
+ *         int
+\end_layout
+
+\begin_layout Plain Layout
+
+ *         hex
+\end_layout
+
+\begin_layout Plain Layout
+
+ *         string
+\end_layout
+
+\begin_layout Plain Layout
+
+ * dependencias : 
+\end_layout
+
+\begin_layout Plain Layout
+
+ *		A depends on B : A no es visible si B no esta activado.
+\end_layout
+
+\begin_layout Plain Layout
+
+ *		A select B : si A es activada automaticamente se activa B.
+\end_layout
+
+\begin_layout Plain Layout
+
+*/
+\end_layout
+
+\begin_layout Plain Layout
+
+config NOMBRE
+\end_layout
+
+\begin_layout Plain Layout
+
+	tipo "nombre que aparece en la interfaz"
+\end_layout
+
+\begin_layout Plain Layout
+
+	depends on B 
+\end_layout
+
+\begin_layout Plain Layout
+
+	select C
+\end_layout
+
+\begin_layout Plain Layout
+
+	default VALOR
+\end_layout
+
+\begin_layout Plain Layout
+
+	help
+\end_layout
+
+\begin_layout Plain Layout
+
+		.....
+ //descripcion
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

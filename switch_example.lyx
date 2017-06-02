@@ -1,0 +1,5682 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\listings_params "language=C,keywordstyle={\color{blue}},commentstyle={\color{magenta}\itshape},emphstyle={\color{red}},breaklines=true,basicstyle={\ttfamily},stringstyle={\color{green}},identifierstyle={\color{cyan}}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+EJEMPLO 2: 
+\end_layout
+
+\begin_layout Title
+CREACION PLATFORM DRIVER GPIO SWITCH
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+Source Code
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+ * Based on Xilinx GPIO driver
+\end_layout
+
+\begin_layout Plain Layout
+
+ * Copyright 2008 Xilinx, Inc.
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * This program is free software; you can redistribute it and/or modify
+\end_layout
+
+\begin_layout Plain Layout
+
+ * it under the terms of the GNU General Public License version 2
+\end_layout
+
+\begin_layout Plain Layout
+
+ * as published by the Free Software Foundation.
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * You should have received a copy of the GNU General Public License
+\end_layout
+
+\begin_layout Plain Layout
+
+ * along with this program; if not, write to the Free Software
+\end_layout
+
+\begin_layout Plain Layout
+
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 
+ USA
+\end_layout
+
+\begin_layout Plain Layout
+
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <linux/init.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <linux/errno.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <linux/of_device.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <linux/of_platform.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <linux/of_gpio.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <linux/io.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <linux/gpio.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <linux/module.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <linux/slab.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+struct gcq_gpio_switch_chip {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct of_mm_gpio_chip mmchip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	spinlock_t gpio_lock;	/* Lock used for synchronization */
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static int gcq_gpio_switch_get(struct gpio_chip *gc, unsigned int gpio)
+ {
+\end_layout
+
+\begin_layout Plain Layout
+
+	int bank;
+\end_layout
+
+\begin_layout Plain Layout
+
+	int g;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct of_mm_gpio_chip *mm_gc = to_of_mm_gpio_chip(gc);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	bank = gpio >> 3;
+\end_layout
+
+\begin_layout Plain Layout
+
+	g = gpio%8;
+\end_layout
+
+\begin_layout Plain Layout
+
+    printk(KERN_INFO "gcq_gpio_get
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+	return (ioread8(mm_gc->regs + bank) >> g) & 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = chip->get_direction(chip, offset);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status > 0) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		//GPIOF_DIR_IN, or other positive
+\end_layout
+
+\begin_layout Plain Layout
+
+		status = 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+		clear_bit(FLAG_IS_OUT, &desc->flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status == 0) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		// GPIOF_DIR_OUT
+\end_layout
+
+\begin_layout Plain Layout
+
+		set_bit(FLAG_IS_OUT, &desc->flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+*/
+\end_layout
+
+\begin_layout Plain Layout
+
+static int gcq_gpio_switch_get_direction(struct gpio_chip *gc, unsigned
+ int gpio) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	printk(KERN_INFO "gcq_gpio_get_dir
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+	return 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static int gcq_gpio_switch_probe(struct platform_device *pdev)  {
+\end_layout
+
+\begin_layout Plain Layout
+
+ 	//nodo del dts que se conecta al driver
+\end_layout
+
+\begin_layout Plain Layout
+
+	 struct device_node *node = pdev->dev.of_node;
+\end_layout
+
+\begin_layout Plain Layout
+
+ 	int status;
+\end_layout
+
+\begin_layout Plain Layout
+
+     const u32 *tree_info;
+\end_layout
+
+\begin_layout Plain Layout
+
+ 	struct gcq_gpio_switch_chip *gcq_gc;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ 	gcq_gc = devm_kzalloc(&pdev->dev, sizeof(*gcq_gc), GFP_KERNEL);
+\end_layout
+
+\begin_layout Plain Layout
+
+ 	if (!gcq_gc)
+\end_layout
+
+\begin_layout Plain Layout
+
+ 		return -ENOMEM;
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	 //inicializamos el lock
+\end_layout
+
+\begin_layout Plain Layout
+
+ 	spin_lock_init(&gcq_gc->gpio_lock);
+\end_layout
+
+\begin_layout Plain Layout
+
+	 //valor por defecto de 8 GPIO
+\end_layout
+
+\begin_layout Plain Layout
+
+     gcq_gc->mmchip.gc.ngpio = 8;
+\end_layout
+
+\begin_layout Plain Layout
+
+	 //leemos el campo del dts xlnx,gpio-width
+\end_layout
+
+\begin_layout Plain Layout
+
+	 tree_info = of_get_property(node,"xlnx,gpio-width",NULL);
+\end_layout
+
+\begin_layout Plain Layout
+
+ 	if (tree_info)
+\end_layout
+
+\begin_layout Plain Layout
+
+		gcq_gc->mmchip.gc.ngpio = *tree_info;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	 //creamos puntero a nuestras funciones, mas adelante veremos como las
+ llama el kernel
+\end_layout
+
+\begin_layout Plain Layout
+
+	 gcq_gc->mmchip.gc.get_direction = gcq_gpio_switch_get_direction;
+\end_layout
+
+\begin_layout Plain Layout
+
+	 gcq_gc->mmchip.gc.get = gcq_gpio_switch_get;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	 //registramos el dispositivo GPIO
+\end_layout
+
+\begin_layout Plain Layout
+
+	 /* Call the OF gpio helper to setup and register the GPIO device */
+\end_layout
+
+\begin_layout Plain Layout
+
+	 status = of_mm_gpiochip_add(node, &gcq_gc->mmchip);
+\end_layout
+
+\begin_layout Plain Layout
+
+	 if (status) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		dev_err(&pdev->dev, "Failed adding memory mapped gpiochip
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+		return status;
+\end_layout
+
+\begin_layout Plain Layout
+
+	 }
+\end_layout
+
+\begin_layout Plain Layout
+
+	 platform_set_drvdata(pdev, gcq_gc);
+\end_layout
+
+\begin_layout Plain Layout
+
+     return status;
+\end_layout
+
+\begin_layout Plain Layout
+
+ }
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static int gcq_gpio_switch_remove(struct platform_device *pdev) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gcq_gpio_switch_chip *gcq_gc = platform_get_drvdata(pdev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	of_mm_gpiochip_remove(&gcq_gc->mmchip);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static struct of_device_id gcq_gpio_switch_of_match[] = {
+\end_layout
+
+\begin_layout Plain Layout
+
+	{ .compatible = "dte,gcq-gpio-switch" },
+\end_layout
+
+\begin_layout Plain Layout
+
+	{ /* end of list */ },
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+MODULE_DEVICE_TABLE(of, gcq_gpio_switch_of_match);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static struct platform_driver gcq_gpio_switch_driver = {
+\end_layout
+
+\begin_layout Plain Layout
+
+	.driver = {
+\end_layout
+
+\begin_layout Plain Layout
+
+		.name	= "gcq-gpio-switch",
+\end_layout
+
+\begin_layout Plain Layout
+
+		.of_match_table = of_match_ptr(gcq_gpio_switch_of_match),
+\end_layout
+
+\begin_layout Plain Layout
+
+	},
+\end_layout
+
+\begin_layout Plain Layout
+
+	.probe		= gcq_gpio_switch_probe,
+\end_layout
+
+\begin_layout Plain Layout
+
+	.remove		= gcq_gpio_switch_remove,
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static int __init gcq_gpio_switch_init(void) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	return platform_driver_register(&gcq_gpio_switch_driver);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+subsys_initcall(gcq_gpio_switch_init);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static void __exit gcq_gpio_switch_exit(void) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	platform_driver_unregister(&gcq_gpio_switch_driver);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+module_exit(gcq_gpio_switch_exit);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+MODULE_AUTHOR("GCQ");
+\end_layout
+
+\begin_layout Plain Layout
+
+MODULE_DESCRIPTION("Testing GPIO SWITCH driver");
+\end_layout
+
+\begin_layout Plain Layout
+
+MODULE_LICENSE("GPL"); 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+DTS
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+switch0: gpio@B8000000 {
+\end_layout
+
+\begin_layout Plain Layout
+
+		compatible = "dte,gcq-gpio-switch";
+\end_layout
+
+\begin_layout Plain Layout
+
+		reg = <0xB8000000 0x1>;
+\end_layout
+
+\begin_layout Plain Layout
+
+		#gpio-cells = <2>;
+\end_layout
+
+\begin_layout Plain Layout
+
+		gpio-controller;
+\end_layout
+
+\begin_layout Plain Layout
+
+		xlnx,gpio-width = <8>;
+\end_layout
+
+\begin_layout Plain Layout
+
+	};
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+Registro Driver
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+ * /drivers/base/platform_device.h
+\end_layout
+
+\begin_layout Plain Layout
+
+*/
+\end_layout
+
+\begin_layout Plain Layout
+
+#define platform_driver_register(drv)  __platform_driver_register(drv, THIS_MODU
+LE)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+ * /include/linux/export.h
+\end_layout
+
+\begin_layout Plain Layout
+
+*/
+\end_layout
+
+\begin_layout Plain Layout
+
+#ifdef MODULE
+\end_layout
+
+\begin_layout Plain Layout
+
+extern struct module __this_module;
+\end_layout
+
+\begin_layout Plain Layout
+
+#define THIS_MODULE (&__this_module)
+\end_layout
+
+\begin_layout Plain Layout
+
+#else
+\end_layout
+
+\begin_layout Plain Layout
+
+#define THIS_MODULE ((struct module *)0)
+\end_layout
+
+\begin_layout Plain Layout
+
+#endif
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+ * /drivers/base/platform.c
+\end_layout
+
+\begin_layout Plain Layout
+
+*/
+\end_layout
+
+\begin_layout Plain Layout
+
+/**
+\end_layout
+
+\begin_layout Plain Layout
+
+ * __platform_driver_register - register a driver for platform-level devices
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @drv: platform driver structure
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @owner: owning module/driver
+\end_layout
+
+\begin_layout Plain Layout
+
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+int __platform_driver_register(struct platform_driver *drv, struct module
+ *owner) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	drv->driver.owner = owner;
+\end_layout
+
+\begin_layout Plain Layout
+
+	drv->driver.bus = &platform_bus_type;
+\end_layout
+
+\begin_layout Plain Layout
+
+	drv->driver.probe = platform_drv_probe;
+\end_layout
+
+\begin_layout Plain Layout
+
+	drv->driver.remove = platform_drv_remove;
+\end_layout
+
+\begin_layout Plain Layout
+
+	drv->driver.shutdown = platform_drv_shutdown;
+\end_layout
+
+\begin_layout Plain Layout
+
+	return driver_register(&drv->driver);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+ * /drivers/base/driver.c 
+\end_layout
+
+\begin_layout Plain Layout
+
+*/
+\end_layout
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+.driver = {
+\end_layout
+
+\begin_layout Plain Layout
+
+		.name	= "gcq-gpio-switch",
+\end_layout
+
+\begin_layout Plain Layout
+
+		.of_match_table = of_match_ptr(gcq_gpio_switch_of_match),
+\end_layout
+
+\begin_layout Plain Layout
+
+		---------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+		.bus = {
+\end_layout
+
+\begin_layout Plain Layout
+
+				.name		= "platform",
+\end_layout
+
+\begin_layout Plain Layout
+
+				.dev_groups	= platform_dev_groups,
+\end_layout
+
+\begin_layout Plain Layout
+
+				.match		= platform_match, // bind platform device to platform driver.
+\end_layout
+
+\begin_layout Plain Layout
+
+				.uevent		= platform_uevent,
+\end_layout
+
+\begin_layout Plain Layout
+
+				.pm		= &platform_dev_pm_ops,
+\end_layout
+
+\begin_layout Plain Layout
+
+				}
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+*/
+\end_layout
+
+\begin_layout Plain Layout
+
+int driver_register(struct device_driver *drv) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	[...]
+\end_layout
+
+\begin_layout Plain Layout
+
+	//se mira si existe ya un driver con el mismo nombre en el platform bus
+\end_layout
+
+\begin_layout Plain Layout
+
+	other = driver_find(drv->name, drv->bus);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (other) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		printk(KERN_ERR "Error: Driver '%s' is already registered, "
+\end_layout
+
+\begin_layout Plain Layout
+
+			"aborting...
+\backslash
+n", drv->name);
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -EBUSY;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	/*
+\end_layout
+
+\begin_layout Plain Layout
+
+		principalmente en bus_add_driver se llama a:
+\end_layout
+
+\begin_layout Plain Layout
+
+		1.
+ module_add_driver(drv->owner, drv)
+\end_layout
+
+\begin_layout Plain Layout
+
+		2.
+ driver_create_file(drv, &driver_attr_uevent)
+\end_layout
+
+\begin_layout Plain Layout
+
+	*/
+\end_layout
+
+\begin_layout Plain Layout
+
+	ret = bus_add_driver(drv);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (ret)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return ret;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	[...]
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	return ret;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+void module_add_driver(struct module *mod, struct device_driver *drv){
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct module_kobject *mk = NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	[...]
+\end_layout
+
+\begin_layout Plain Layout
+
+	mk = &mod->mkobj;
+\end_layout
+
+\begin_layout Plain Layout
+
+	/**  
+\end_layout
+
+\begin_layout Plain Layout
+
+		 *	sysfs_create_link - create symlink between two objects.
+\end_layout
+
+\begin_layout Plain Layout
+
+		 *	@kobj:	object whose directory we're creating the link in.
+\end_layout
+
+\begin_layout Plain Layout
+
+ 		*	@target:	object we're pointing to.
+\end_layout
+
+\begin_layout Plain Layout
+
+ 		*	@name:		name of the symlink.
+\end_layout
+
+\begin_layout Plain Layout
+
+ 	*/
+\end_layout
+
+\begin_layout Plain Layout
+
+	no_warn = sysfs_create_link(&drv->p->kobj, &mk->kobj, "module");
+\end_layout
+
+\begin_layout Plain Layout
+
+	/*
+\end_layout
+
+\begin_layout Plain Layout
+
+		* driver_name = "%s:%s",drv->bus->name,drv->name
+\end_layout
+
+\begin_layout Plain Layout
+
+	*/
+\end_layout
+
+\begin_layout Plain Layout
+
+	driver_name = make_driver_name(drv);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (driver_name) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		/*
+\end_layout
+
+\begin_layout Plain Layout
+
+			* mk->drivers_dir = kobject_create_and_add("drivers", &mk->kobj);
+\end_layout
+
+\begin_layout Plain Layout
+
+		*/
+\end_layout
+
+\begin_layout Plain Layout
+
+		module_create_drivers_dir(mk);
+\end_layout
+
+\begin_layout Plain Layout
+
+		no_warn = sysfs_create_link(mk->drivers_dir, &drv->p->kobj,driver_name);
+\end_layout
+
+\begin_layout Plain Layout
+
+		kfree(driver_name);
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/**
+\end_layout
+
+\begin_layout Plain Layout
+
+ * driver_create_file - create sysfs file for driver.
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @drv: driver.
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @attr: driver attribute descriptor.
+\end_layout
+
+\begin_layout Plain Layout
+
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+int driver_create_file(struct device_driver *drv,
+\end_layout
+
+\begin_layout Plain Layout
+
+		       const struct driver_attribute *attr) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	int error;
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (drv)
+\end_layout
+
+\begin_layout Plain Layout
+
+		error = sysfs_create_file(&drv->p->kobj, &attr->attr);
+\end_layout
+
+\begin_layout Plain Layout
+
+	else
+\end_layout
+
+\begin_layout Plain Layout
+
+		error = -EINVAL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	return error;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+EXPORT_SYMBOL_GPL(driver_create_file);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+deteccion de GPIO
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/**
+\end_layout
+
+\begin_layout Plain Layout
+
+ * of_mm_gpiochip_add - Add memory mapped GPIO chip (bank)
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @np:		device node of the GPIO chip
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @mm_gc:	pointer to the of_mm_gpio_chip allocated structure
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * To use this function you should allocate and fill mm_gc with:
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * 1) In the gpio_chip structure:
+\end_layout
+
+\begin_layout Plain Layout
+
+ *    - all the callbacks
+\end_layout
+
+\begin_layout Plain Layout
+
+ *    - of_gpio_n_cells
+\end_layout
+
+\begin_layout Plain Layout
+
+ *    - of_xlate callback (optional)
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * 3) In the of_mm_gpio_chip structure:
+\end_layout
+
+\begin_layout Plain Layout
+
+ *    - save_regs callback (optional)
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * If succeeded, this function will map bank's memory and will
+\end_layout
+
+\begin_layout Plain Layout
+
+ * do all necessary work for you.
+ Then you'll able to use .regs
+\end_layout
+
+\begin_layout Plain Layout
+
+ * to manage GPIOs from the callbacks.
+\end_layout
+
+\begin_layout Plain Layout
+
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+int of_mm_gpiochip_add(struct device_node *np,
+\end_layout
+
+\begin_layout Plain Layout
+
+		       struct of_mm_gpio_chip *mm_gc) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	int ret = -ENOMEM;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_chip *gc = &mm_gc->gc;
+\end_layout
+
+\begin_layout Plain Layout
+
+	/**
+\end_layout
+
+\begin_layout Plain Layout
+
+		 * kstrdup - allocate space for and copy an existing string
+\end_layout
+
+\begin_layout Plain Layout
+
+		 * @s: the string to duplicate
+\end_layout
+
+\begin_layout Plain Layout
+
+		 * @gfp: the GFP mask used in the kmalloc() call when allocating memory
+\end_layout
+
+\begin_layout Plain Layout
+
+	 */
+\end_layout
+
+\begin_layout Plain Layout
+
+	gc->label = kstrdup(np->full_name, GFP_KERNEL);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!gc->label)
+\end_layout
+
+\begin_layout Plain Layout
+
+		goto err0;
+\end_layout
+
+\begin_layout Plain Layout
+
+	//mapeamos la mamoria ver mas adelante.
+\end_layout
+
+\begin_layout Plain Layout
+
+	mm_gc->regs = of_iomap(np, 0);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!mm_gc->regs)
+\end_layout
+
+\begin_layout Plain Layout
+
+		goto err1;
+\end_layout
+
+\begin_layout Plain Layout
+
+	gc->base = -1;
+\end_layout
+
+\begin_layout Plain Layout
+
+	//se puede definir la funcion save_regs en el driver para dar valor inicial
+ a los registros
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (mm_gc->save_regs)
+\end_layout
+
+\begin_layout Plain Layout
+
+		mm_gc->save_regs(mm_gc);
+\end_layout
+
+\begin_layout Plain Layout
+
+	mm_gc->gc.of_node = np;
+\end_layout
+
+\begin_layout Plain Layout
+
+	ret = gpiochip_add(gc);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (ret)
+\end_layout
+
+\begin_layout Plain Layout
+
+		goto err2;
+\end_layout
+
+\begin_layout Plain Layout
+
+	return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+err2:
+\end_layout
+
+\begin_layout Plain Layout
+
+	iounmap(mm_gc->regs);
+\end_layout
+
+\begin_layout Plain Layout
+
+err1:
+\end_layout
+
+\begin_layout Plain Layout
+
+	kfree(gc->label);
+\end_layout
+
+\begin_layout Plain Layout
+
+err0:
+\end_layout
+
+\begin_layout Plain Layout
+
+	pr_err("%s: GPIO chip registration failed with status %d
+\backslash
+n",
+\end_layout
+
+\begin_layout Plain Layout
+
+	       np->full_name, ret);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return ret;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+EXPORT_SYMBOL(of_mm_gpiochip_add);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+mapeado memoria
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+void __iomem *of_iomap(struct device_node *np, int index) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct resource res;
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (of_address_to_resource(np, index, &res))
+\end_layout
+
+\begin_layout Plain Layout
+
+		return NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	//reserva desde (res.start) hasta (res->end - res->start + 1) 
+\end_layout
+
+\begin_layout Plain Layout
+
+	return ioremap(res.start, resource_size(&res));
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+EXPORT_SYMBOL(of_iomap);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+int of_address_to_resource(struct device_node *dev, int index,
+\end_layout
+
+\begin_layout Plain Layout
+
+			   struct resource *r) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	const __be32	*addrp;
+\end_layout
+
+\begin_layout Plain Layout
+
+	u64		size;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned int	flags;
+\end_layout
+
+\begin_layout Plain Layout
+
+	const char	*name = NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	addrp = of_get_address(dev, index, &size, &flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (addrp == NULL)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -EINVAL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* Get optional "reg-names" property to add a name to a resource */
+\end_layout
+
+\begin_layout Plain Layout
+
+	of_property_read_string_index(dev, "reg-names",	index, &name);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return __of_address_to_resource(dev, addrp, size, flags, name, r);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+EXPORT_SYMBOL_GPL(of_address_to_resource);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+const __be32 *of_get_address(struct device_node *dev, int index, u64 *size,
+\end_layout
+
+\begin_layout Plain Layout
+
+		    unsigned int *flags) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	const __be32 *prop;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned int psize;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct device_node *parent;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct of_bus *bus;
+\end_layout
+
+\begin_layout Plain Layout
+
+	int onesize, i, na, ns;
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* Get parent & match bus type */
+\end_layout
+
+\begin_layout Plain Layout
+
+	// devuelve el nodo padre en dts
+\end_layout
+
+\begin_layout Plain Layout
+
+	parent = of_get_parent(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (parent == NULL)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* 
+\end_layout
+
+\begin_layout Plain Layout
+
+		*en este punto bus sera
+\end_layout
+
+\begin_layout Plain Layout
+
+		{
+\end_layout
+
+\begin_layout Plain Layout
+
+		.name = "default",
+\end_layout
+
+\begin_layout Plain Layout
+
+		.addresses = "reg",
+\end_layout
+
+\begin_layout Plain Layout
+
+		.match = NULL,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.count_cells = of_bus_default_count_cells,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.map = of_bus_default_map,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.translate = of_bus_default_translate,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.get_flags = of_bus_default_get_flags,
+\end_layout
+
+\begin_layout Plain Layout
+
+		}
+\end_layout
+
+\begin_layout Plain Layout
+
+	*/
+\end_layout
+
+\begin_layout Plain Layout
+
+	bus = of_match_bus(parent);
+\end_layout
+
+\begin_layout Plain Layout
+
+	//na = #address-cells
+\end_layout
+
+\begin_layout Plain Layout
+
+	//ns = #size-cells
+\end_layout
+
+\begin_layout Plain Layout
+
+	bus->count_cells(dev, &na, &ns);
+\end_layout
+
+\begin_layout Plain Layout
+
+	of_node_put(parent);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!OF_CHECK_ADDR_COUNT(na))
+\end_layout
+
+\begin_layout Plain Layout
+
+		return NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* Get "reg" or "assigned-addresses" property */
+\end_layout
+
+\begin_layout Plain Layout
+
+	// prop = <0xB8000000 0x1>
+\end_layout
+
+\begin_layout Plain Layout
+
+	prop = of_get_property(dev, bus->addresses, &psize);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (prop == NULL)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	// psize son 2 elementos de u32, 8 bytes
+\end_layout
+
+\begin_layout Plain Layout
+
+	// psize = 8/4 = 2
+\end_layout
+
+\begin_layout Plain Layout
+
+	psize /= 4;
+\end_layout
+
+\begin_layout Plain Layout
+
+	//onesize = 2
+\end_layout
+
+\begin_layout Plain Layout
+
+	onesize = na + ns;
+\end_layout
+
+\begin_layout Plain Layout
+
+	for (i = 0; psize >= onesize; psize -= onesize, prop += onesize, i++)
+\end_layout
+
+\begin_layout Plain Layout
+
+		//index en nuestro caso es 0
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (i == index) {
+\end_layout
+
+\begin_layout Plain Layout
+
+			if (size)
+\end_layout
+
+\begin_layout Plain Layout
+
+				//espacio de memoria necesario le a partir de prop+na, donde comienza
+ ns
+\end_layout
+
+\begin_layout Plain Layout
+
+				*size = of_read_number(prop + na, ns);
+\end_layout
+
+\begin_layout Plain Layout
+
+			if (flags)
+\end_layout
+
+\begin_layout Plain Layout
+
+				*flags = bus->get_flags(prop);
+\end_layout
+
+\begin_layout Plain Layout
+
+			//devolvemos <0xB8000000 0x1>
+\end_layout
+
+\begin_layout Plain Layout
+
+			return prop;
+\end_layout
+
+\begin_layout Plain Layout
+
+		}
+\end_layout
+
+\begin_layout Plain Layout
+
+	return NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+EXPORT_SYMBOL(of_get_address);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static int __of_address_to_resource(struct device_node *dev,
+\end_layout
+
+\begin_layout Plain Layout
+
+		const __be32 *addrp, u64 size, unsigned int flags,
+\end_layout
+
+\begin_layout Plain Layout
+
+		const char *name, struct resource *r) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	u64 taddr;
+\end_layout
+
+\begin_layout Plain Layout
+
+	if ((flags & (IORESOURCE_IO | IORESOURCE_MEM)) == 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -EINVAL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	//llama a __of_translate_address con rprop = "ranges"
+\end_layout
+
+\begin_layout Plain Layout
+
+	//en este caso taddr = 0xB8000000
+\end_layout
+
+\begin_layout Plain Layout
+
+	taddr = of_translate_address(dev, addrp);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (taddr == OF_BAD_ADDR)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -EINVAL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	memset(r, 0, sizeof(struct resource));
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (flags & IORESOURCE_IO) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		unsigned long port;
+\end_layout
+
+\begin_layout Plain Layout
+
+		port = pci_address_to_pio(taddr);
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (port == (unsigned long)-1)
+\end_layout
+
+\begin_layout Plain Layout
+
+			return -EINVAL;
+\end_layout
+
+\begin_layout Plain Layout
+
+		r->start = port;
+\end_layout
+
+\begin_layout Plain Layout
+
+		r->end = port + size - 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+	} else {
+\end_layout
+
+\begin_layout Plain Layout
+
+		r->start = taddr;
+\end_layout
+
+\begin_layout Plain Layout
+
+		r->end = taddr + size - 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	r->flags = flags;
+\end_layout
+
+\begin_layout Plain Layout
+
+	r->name = name ? name : dev->full_name;
+\end_layout
+
+\begin_layout Plain Layout
+
+	return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static u64 __of_translate_address(struct device_node *dev,
+\end_layout
+
+\begin_layout Plain Layout
+
+				  const __be32 *in_addr, const char *rprop) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct device_node *parent = NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct of_bus *bus, *pbus;
+\end_layout
+
+\begin_layout Plain Layout
+
+	__be32 addr[OF_MAX_ADDR_CELLS];
+\end_layout
+
+\begin_layout Plain Layout
+
+	int na, ns, pna, pns;
+\end_layout
+
+\begin_layout Plain Layout
+
+	u64 result = OF_BAD_ADDR;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	pr_debug("OF: ** translation for device %s **
+\backslash
+n", of_node_full_name(dev));
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* Increase refcount at current level */
+\end_layout
+
+\begin_layout Plain Layout
+
+	of_node_get(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* Get parent & match bus type */
+\end_layout
+
+\begin_layout Plain Layout
+
+	parent = of_get_parent(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (parent == NULL)
+\end_layout
+
+\begin_layout Plain Layout
+
+		goto bail;
+\end_layout
+
+\begin_layout Plain Layout
+
+	bus = of_match_bus(parent);
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* Count address cells & copy address locally */
+\end_layout
+
+\begin_layout Plain Layout
+
+	bus->count_cells(dev, &na, &ns);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!OF_CHECK_COUNTS(na, ns)) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		pr_debug("OF: Bad cell count for %s
+\backslash
+n", of_node_full_name(dev));
+\end_layout
+
+\begin_layout Plain Layout
+
+		goto bail;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	//copia en addr la direccion in_addr = <0xB8000000 0x1>
+\end_layout
+
+\begin_layout Plain Layout
+
+	memcpy(addr, in_addr, na * 4);
+\end_layout
+
+\begin_layout Plain Layout
+
+	pr_debug("OF: bus is %s (na=%d, ns=%d) on %s
+\backslash
+n",
+\end_layout
+
+\begin_layout Plain Layout
+
+	    bus->name, na, ns, of_node_full_name(parent));
+\end_layout
+
+\begin_layout Plain Layout
+
+	of_dump_addr("OF: translating address:", addr, na);
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* Translate */
+\end_layout
+
+\begin_layout Plain Layout
+
+	for (;;) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		/* Switch to parent bus */
+\end_layout
+
+\begin_layout Plain Layout
+
+		of_node_put(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+		dev = parent;
+\end_layout
+
+\begin_layout Plain Layout
+
+		parent = of_get_parent(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+		/* If root, we have finished */
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (parent == NULL) {
+\end_layout
+
+\begin_layout Plain Layout
+
+			pr_debug("OF: reached root node
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+			//lee el valor desde addr na bytes
+\end_layout
+
+\begin_layout Plain Layout
+
+			result = of_read_number(addr, na);
+\end_layout
+
+\begin_layout Plain Layout
+
+			break;
+\end_layout
+
+\begin_layout Plain Layout
+
+		}
+\end_layout
+
+\begin_layout Plain Layout
+
+		/* Get new parent bus and counts */
+\end_layout
+
+\begin_layout Plain Layout
+
+		pbus = of_match_bus(parent);
+\end_layout
+
+\begin_layout Plain Layout
+
+		pbus->count_cells(dev, &pna, &pns);
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (!OF_CHECK_COUNTS(pna, pns)) {
+\end_layout
+
+\begin_layout Plain Layout
+
+			printk(KERN_ERR "prom_parse: Bad cell count for %s
+\backslash
+n",
+\end_layout
+
+\begin_layout Plain Layout
+
+			       of_node_full_name(dev));
+\end_layout
+
+\begin_layout Plain Layout
+
+			break;
+\end_layout
+
+\begin_layout Plain Layout
+
+		}
+\end_layout
+
+\begin_layout Plain Layout
+
+		pr_debug("OF: parent bus is %s (na=%d, ns=%d) on %s
+\backslash
+n",
+\end_layout
+
+\begin_layout Plain Layout
+
+		    pbus->name, pna, pns, of_node_full_name(parent));
+\end_layout
+
+\begin_layout Plain Layout
+
+		/* Apply bus translation */
+\end_layout
+
+\begin_layout Plain Layout
+
+		//en nuestro caso no tenemos la propiedad "rprop" por lo que devuelve
+ 1
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (of_translate_one(dev, bus, pbus, addr, na, ns, pna, rprop))
+\end_layout
+
+\begin_layout Plain Layout
+
+			break;
+\end_layout
+
+\begin_layout Plain Layout
+
+		/* Complete the move up one level */
+\end_layout
+
+\begin_layout Plain Layout
+
+		na = pna;
+\end_layout
+
+\begin_layout Plain Layout
+
+		ns = pns;
+\end_layout
+
+\begin_layout Plain Layout
+
+		bus = pbus;
+\end_layout
+
+\begin_layout Plain Layout
+
+		of_dump_addr("OF: one level translation:", addr, na);
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+ bail:
+\end_layout
+
+\begin_layout Plain Layout
+
+	of_node_put(parent);
+\end_layout
+
+\begin_layout Plain Layout
+
+	of_node_put(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	return result; } 
+\end_layout
+
+\begin_layout Plain Layout
+
+---------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+static struct of_bus of_busses[] = {
+\end_layout
+
+\begin_layout Plain Layout
+
+#ifdef CONFIG_OF_ADDRESS_PCI
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* PCI */
+\end_layout
+
+\begin_layout Plain Layout
+
+	{
+\end_layout
+
+\begin_layout Plain Layout
+
+		.name = "pci",
+\end_layout
+
+\begin_layout Plain Layout
+
+		.addresses = "assigned-addresses",
+\end_layout
+
+\begin_layout Plain Layout
+
+		.match = of_bus_pci_match,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.count_cells = of_bus_pci_count_cells,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.map = of_bus_pci_map,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.translate = of_bus_pci_translate,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.get_flags = of_bus_pci_get_flags,
+\end_layout
+
+\begin_layout Plain Layout
+
+	},
+\end_layout
+
+\begin_layout Plain Layout
+
+#endif /* CONFIG_OF_ADDRESS_PCI */
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* ISA */
+\end_layout
+
+\begin_layout Plain Layout
+
+	{
+\end_layout
+
+\begin_layout Plain Layout
+
+		.name = "isa",
+\end_layout
+
+\begin_layout Plain Layout
+
+		.addresses = "reg",
+\end_layout
+
+\begin_layout Plain Layout
+
+		.match = of_bus_isa_match,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.count_cells = of_bus_isa_count_cells,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.map = of_bus_isa_map,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.translate = of_bus_isa_translate,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.get_flags = of_bus_isa_get_flags,
+\end_layout
+
+\begin_layout Plain Layout
+
+	},
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* Default */
+\end_layout
+
+\begin_layout Plain Layout
+
+	{
+\end_layout
+
+\begin_layout Plain Layout
+
+		.name = "default",
+\end_layout
+
+\begin_layout Plain Layout
+
+		.addresses = "reg",
+\end_layout
+
+\begin_layout Plain Layout
+
+		.match = NULL,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.count_cells = of_bus_default_count_cells,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.map = of_bus_default_map,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.translate = of_bus_default_translate,
+\end_layout
+
+\begin_layout Plain Layout
+
+		.get_flags = of_bus_default_get_flags,
+\end_layout
+
+\begin_layout Plain Layout
+
+	},
+\end_layout
+
+\begin_layout Plain Layout
+
+};
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static struct of_bus *of_match_bus(struct device_node *np) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	int i;
+\end_layout
+
+\begin_layout Plain Layout
+
+	for (i = 0; i < ARRAY_SIZE(of_busses); i++)
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (!of_busses[i].match || of_busses[i].match(np))
+\end_layout
+
+\begin_layout Plain Layout
+
+			return &of_busses[i];
+\end_layout
+
+\begin_layout Plain Layout
+
+	BUG();
+\end_layout
+
+\begin_layout Plain Layout
+
+	return NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*  * Default translator (generic bus)  */
+\end_layout
+
+\begin_layout Plain Layout
+
+static void of_bus_default_count_cells(struct device_node *dev,
+\end_layout
+
+\begin_layout Plain Layout
+
+				       int *addrc, int *sizec) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (addrc)
+\end_layout
+
+\begin_layout Plain Layout
+
+		*addrc = of_n_addr_cells(dev); // valor de la propiedad #address-cells
+ del dts busca desde el hijo hasta el nodo raiz
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (sizec)
+\end_layout
+
+\begin_layout Plain Layout
+
+		*sizec = of_n_size_cells(dev); // valor de la propiedad #size-cells del
+ dts
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Registro en sysfs
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/**
+\end_layout
+
+\begin_layout Plain Layout
+
+ * gpiochip_add() - register a gpio_chip
+\end_layout
+
+\begin_layout Plain Layout
+
+ * @chip: the chip to register, with chip->base initialized
+\end_layout
+
+\begin_layout Plain Layout
+
+ * Context: potentially before irqs will work
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * Returns a negative errno if the chip can't be registered, such as
+\end_layout
+
+\begin_layout Plain Layout
+
+ * because the chip->base is invalid or already associated with a
+\end_layout
+
+\begin_layout Plain Layout
+
+ * different chip.
+  Otherwise it returns zero as a success code.
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * When gpiochip_add() is called very early during boot, so that GPIOs
+\end_layout
+
+\begin_layout Plain Layout
+
+ * can be freely used, the chip->dev device must be registered before
+\end_layout
+
+\begin_layout Plain Layout
+
+ * the gpio framework's arch_initcall().
+  Otherwise sysfs initialization
+\end_layout
+
+\begin_layout Plain Layout
+
+ * for GPIOs will fail rudely.
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * If chip->base is negative, this requests dynamic assignment of
+\end_layout
+
+\begin_layout Plain Layout
+
+ * a range of valid GPIOs.
+\end_layout
+
+\begin_layout Plain Layout
+
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+int gpiochip_add(struct gpio_chip *chip) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned long	flags;
+\end_layout
+
+\begin_layout Plain Layout
+
+	int		status = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned	id;
+\end_layout
+
+\begin_layout Plain Layout
+
+	//la base es -1
+\end_layout
+
+\begin_layout Plain Layout
+
+	int		base = chip->base;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_desc *descs;
+\end_layout
+
+\begin_layout Plain Layout
+
+	//inizializa memoria para un array de chip->ngpio elementos
+\end_layout
+
+\begin_layout Plain Layout
+
+	//cada uno de tamaño struct gpio_desc
+\end_layout
+
+\begin_layout Plain Layout
+
+	//inizializa con 0 en sus contenidos
+\end_layout
+
+\begin_layout Plain Layout
+
+	descs = kcalloc(chip->ngpio, sizeof(descs[0]), GFP_KERNEL);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!descs)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -ENOMEM;
+\end_layout
+
+\begin_layout Plain Layout
+
+	spin_lock_irqsave(&gpio_lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (base < 0) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		base = gpiochip_find_base(chip->ngpio);
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (base < 0) {
+\end_layout
+
+\begin_layout Plain Layout
+
+			status = base;
+\end_layout
+
+\begin_layout Plain Layout
+
+			spin_unlock_irqrestore(&gpio_lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+			goto err_free_descs;
+\end_layout
+
+\begin_layout Plain Layout
+
+		}
+\end_layout
+
+\begin_layout Plain Layout
+
+		chip->base = base;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = gpiochip_add_to_list(chip);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		spin_unlock_irqrestore(&gpio_lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+		goto err_free_descs;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	//valor inicial para la direccion de cada pin del GPIO
+\end_layout
+
+\begin_layout Plain Layout
+
+	/*
+\end_layout
+
+\begin_layout Plain Layout
+
+	* en la version del kernel v4.11.3
+\end_layout
+
+\begin_layout Plain Layout
+
+	*
+\end_layout
+
+\begin_layout Plain Layout
+
+	for (i = 0; i < chip->ngpio; i++) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		struct gpio_desc *desc = &gdev->descs[i];
+\end_layout
+
+\begin_layout Plain Layout
+
+		desc->gdev = gdev;
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (chip->get_direction) {
+\end_layout
+
+\begin_layout Plain Layout
+
+			int dir = chip->get_direction(chip, i);
+\end_layout
+
+\begin_layout Plain Layout
+
+			if (!dir)
+\end_layout
+
+\begin_layout Plain Layout
+
+				set_bit(FLAG_IS_OUT, &desc->flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+		} else if (!chip->direction_input) { 			
+\end_layout
+
+\begin_layout Plain Layout
+
+			set_bit(FLAG_IS_OUT, &desc->flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+		}
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	*/
+\end_layout
+
+\begin_layout Plain Layout
+
+	for (id = 0; id < chip->ngpio; id++) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		struct gpio_desc *desc = &descs[id];
+\end_layout
+
+\begin_layout Plain Layout
+
+		desc->chip = chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+		/* REVISIT: most hardware initializes GPIOs as inputs (often
+\end_layout
+
+\begin_layout Plain Layout
+
+		 * with pullups enabled) so power usage is minimized.
+ Linux
+\end_layout
+
+\begin_layout Plain Layout
+
+		 * code should set the gpio direction first thing; but until
+\end_layout
+
+\begin_layout Plain Layout
+
+		 * it does, and in case chip->get_direction is not set, we may
+\end_layout
+
+\begin_layout Plain Layout
+
+		 * expose the wrong direction in sysfs.
+\end_layout
+
+\begin_layout Plain Layout
+
+		 */
+\end_layout
+
+\begin_layout Plain Layout
+
+		desc->flags = !chip->direction_input ? (1 << FLAG_IS_OUT) : 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	chip->desc = descs;
+\end_layout
+
+\begin_layout Plain Layout
+
+	spin_unlock_irqrestore(&gpio_lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+#ifdef CONFIG_PINCTRL
+\end_layout
+
+\begin_layout Plain Layout
+
+	INIT_LIST_HEAD(&chip->pin_ranges);
+\end_layout
+
+\begin_layout Plain Layout
+
+#endif
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!chip->owner && chip->dev && chip->dev->driver)
+\end_layout
+
+\begin_layout Plain Layout
+
+		chip->owner = chip->dev->driver->owner;
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = gpiochip_set_desc_names(chip);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status)
+\end_layout
+
+\begin_layout Plain Layout
+
+		goto err_remove_from_list;
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = of_gpiochip_add(chip);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status)
+\end_layout
+
+\begin_layout Plain Layout
+
+		goto err_remove_chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	acpi_gpiochip_add(chip);
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = gpiochip_sysfs_register(chip);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status)
+\end_layout
+
+\begin_layout Plain Layout
+
+		goto err_remove_chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	pr_debug("%s: registered GPIOs %d to %d on device: %s
+\backslash
+n", __func__,
+\end_layout
+
+\begin_layout Plain Layout
+
+		chip->base, chip->base + chip->ngpio - 1,
+\end_layout
+
+\begin_layout Plain Layout
+
+		chip->label ? : "generic");
+\end_layout
+
+\begin_layout Plain Layout
+
+	return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+err_remove_chip:
+\end_layout
+
+\begin_layout Plain Layout
+
+	acpi_gpiochip_remove(chip);
+\end_layout
+
+\begin_layout Plain Layout
+
+	gpiochip_free_hogs(chip);
+\end_layout
+
+\begin_layout Plain Layout
+
+	of_gpiochip_remove(chip);
+\end_layout
+
+\begin_layout Plain Layout
+
+err_remove_from_list:
+\end_layout
+
+\begin_layout Plain Layout
+
+	spin_lock_irqsave(&gpio_lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	list_del(&chip->list);
+\end_layout
+
+\begin_layout Plain Layout
+
+	spin_unlock_irqrestore(&gpio_lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	chip->desc = NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+err_free_descs:
+\end_layout
+
+\begin_layout Plain Layout
+
+	kfree(descs);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* failures here can mean systems won't boot...
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+	pr_err("%s: GPIOs %d..%d (%s) failed to register
+\backslash
+n", __func__,
+\end_layout
+
+\begin_layout Plain Layout
+
+		chip->base, chip->base + chip->ngpio - 1,
+\end_layout
+
+\begin_layout Plain Layout
+
+		chip->label ? : "generic");
+\end_layout
+
+\begin_layout Plain Layout
+
+	return status;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+EXPORT_SYMBOL_GPL(gpiochip_add);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+------------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static int gpiochip_find_base(int ngpio) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_chip *chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	//ARCH_NR_GPIOS = 512 por defecto
+\end_layout
+
+\begin_layout Plain Layout
+
+	// base inicial = 512-8 = 504
+\end_layout
+
+\begin_layout Plain Layout
+
+	int base = ARCH_NR_GPIOS - ngpio;
+\end_layout
+
+\begin_layout Plain Layout
+
+	/**
+\end_layout
+
+\begin_layout Plain Layout
+
+		 * list_for_each_entry_reverse - iterate backwards over list of given
+ type.
+\end_layout
+
+\begin_layout Plain Layout
+
+		 * @pos:	the type * to use as a loop cursor.
+ // chip struct gpio_chip
+\end_layout
+
+\begin_layout Plain Layout
+
+ 		* @head:	the head for your list.
+ //gpio_chips list_head
+\end_layout
+
+\begin_layout Plain Layout
+
+ 		* @member:	the name of the list_head within the struct.
+\end_layout
+
+\begin_layout Plain Layout
+
+		recorre los existentes GPIO, por lo tanto en GPIO0 no se itera y su base
+ es 504.
+\end_layout
+
+\begin_layout Plain Layout
+
+		veamos para GPIO1
+\end_layout
+
+\begin_layout Plain Layout
+
+	 */
+\end_layout
+
+\begin_layout Plain Layout
+
+	list_for_each_entry_reverse(chip, &gpio_chips, list) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		/* found a free space? para GPIO1*/
+\end_layout
+
+\begin_layout Plain Layout
+
+		//chip es GPIO0, 504+8 <= 504, es falso
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (chip->base + chip->ngpio <= base)
+\end_layout
+
+\begin_layout Plain Layout
+
+			break;
+\end_layout
+
+\begin_layout Plain Layout
+
+		else
+\end_layout
+
+\begin_layout Plain Layout
+
+			/* nope, check the space right before the chip */
+\end_layout
+
+\begin_layout Plain Layout
+
+			//GPIO 1 base = baseGPIO0 - 8 = 496
+\end_layout
+
+\begin_layout Plain Layout
+
+			base = chip->base - ngpio;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (gpio_is_valid(base)) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		pr_debug("%s: found new base at %d
+\backslash
+n", __func__, base);
+\end_layout
+
+\begin_layout Plain Layout
+
+		return base;
+\end_layout
+
+\begin_layout Plain Layout
+
+	} else {
+\end_layout
+
+\begin_layout Plain Layout
+
+		pr_err("%s: cannot find free range
+\backslash
+n", __func__);
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -ENOSPC;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+------------------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+ * Add a new chip to the global chips list, keeping the list of chips sorted
+\end_layout
+
+\begin_layout Plain Layout
+
+ * by base order.
+\end_layout
+
+\begin_layout Plain Layout
+
+ *
+\end_layout
+
+\begin_layout Plain Layout
+
+ * Return -EBUSY if the new chip overlaps with some other chip's integer
+\end_layout
+
+\begin_layout Plain Layout
+
+ * space.
+\end_layout
+
+\begin_layout Plain Layout
+
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+static int gpiochip_add_to_list(struct gpio_chip *chip) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct list_head *pos;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_chip *_chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	int err = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* find where to insert our chip */
+\end_layout
+
+\begin_layout Plain Layout
+
+	//gpio_chips es una list_head, linked list con todos los GPIO del sistema.
+\end_layout
+
+\begin_layout Plain Layout
+
+	//veremos el ejemplo con GPIO1
+\end_layout
+
+\begin_layout Plain Layout
+
+	//gpio_chips = [&gpio_chips,GPIO0,&gpio_chips]
+\end_layout
+
+\begin_layout Plain Layout
+
+	list_for_each(pos, &gpio_chips) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		//_chip es GPIO0
+\end_layout
+
+\begin_layout Plain Layout
+
+		_chip = list_entry(pos, struct gpio_chip, list);
+\end_layout
+
+\begin_layout Plain Layout
+
+		/* shall we insert before _chip? */
+\end_layout
+
+\begin_layout Plain Layout
+
+		//GPIO0 base = 504
+\end_layout
+
+\begin_layout Plain Layout
+
+		//GPIO1 base = 496
+\end_layout
+
+\begin_layout Plain Layout
+
+		//504 >= 496+8 es cierto
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (_chip->base >= chip->base + chip->ngpio)
+\end_layout
+
+\begin_layout Plain Layout
+
+			break;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* are we stepping on the chip right before? */
+\end_layout
+
+\begin_layout Plain Layout
+
+	//pos != &gpio_chips es si hemos llegado al final 
+\end_layout
+
+\begin_layout Plain Layout
+
+	//pos->prev != &gpio_chips indica que la lista no es vacia
+\end_layout
+
+\begin_layout Plain Layout
+
+	//si next y prev == &gpio_chips significa que la lista es vacia
+\end_layout
+
+\begin_layout Plain Layout
+
+	//pos = GPIO0, pos->prev = &gpio_chips
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (pos != &gpio_chips && pos->prev != &gpio_chips) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		_chip = list_entry(pos->prev, struct gpio_chip, list);
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (_chip->base + _chip->ngpio > chip->base) {
+\end_layout
+
+\begin_layout Plain Layout
+
+			dev_err(chip->dev,
+\end_layout
+
+\begin_layout Plain Layout
+
+			       "GPIO integer space overlap, cannot add chip
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+			err = -EBUSY;
+\end_layout
+
+\begin_layout Plain Layout
+
+		}
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!err)
+\end_layout
+
+\begin_layout Plain Layout
+
+		//gpio_chips = [&gpio_chips,GPIO1,GPIO0,&gpio_chips]
+\end_layout
+
+\begin_layout Plain Layout
+
+		list_add_tail(&chip->list, pos);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return err;
+\end_layout
+
+\begin_layout Plain Layout
+
+} 
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+------------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+//registramos el GPIO en sysfs
+\end_layout
+
+\begin_layout Plain Layout
+
+int gpiochip_sysfs_register(struct gpio_chip *chip) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct device	*dev;
+\end_layout
+
+\begin_layout Plain Layout
+
+	/*
+\end_layout
+
+\begin_layout Plain Layout
+
+	 * Many systems add gpio chips for SOC support very early,
+\end_layout
+
+\begin_layout Plain Layout
+
+	 * before driver model support is available.
+  In those cases we
+\end_layout
+
+\begin_layout Plain Layout
+
+	 * register later, in gpiolib_sysfs_init() ...
+ here we just
+\end_layout
+
+\begin_layout Plain Layout
+
+	 * verify that _some_ field of gpio_class got initialized.
+\end_layout
+
+\begin_layout Plain Layout
+
+	 */
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!gpio_class.p)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* use chip->base for the ID; it's already known to be unique */
+\end_layout
+
+\begin_layout Plain Layout
+
+	dev = device_create_with_groups(&gpio_class, chip->dev, MKDEV(0, 0),
+\end_layout
+
+\begin_layout Plain Layout
+
+					chip, gpiochip_groups,
+\end_layout
+
+\begin_layout Plain Layout
+
+					"gpiochip%d", chip->base);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (IS_ERR(dev))
+\end_layout
+
+\begin_layout Plain Layout
+
+		return PTR_ERR(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	mutex_lock(&sysfs_lock);
+\end_layout
+
+\begin_layout Plain Layout
+
+	chip->cdev = dev;
+\end_layout
+
+\begin_layout Plain Layout
+
+	mutex_unlock(&sysfs_lock);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+System Calls mediante sysfs
+\end_layout
+
+\begin_layout Section*
+UTILIDADES
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+ * /sys/class/gpio/gpiochipN/
+\end_layout
+
+\begin_layout Plain Layout
+
+ *   /base ...
+ matching gpio_chip.base (N)
+\end_layout
+
+\begin_layout Plain Layout
+
+ *   /label ...
+ matching gpio_chip.label
+\end_layout
+
+\begin_layout Plain Layout
+
+ *   /ngpio ...
+ matching gpio_chip.ngpio
+\end_layout
+
+\begin_layout Plain Layout
+
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+static ssize_t base_show(struct device *dev,
+\end_layout
+
+\begin_layout Plain Layout
+
+			       struct device_attribute *attr, char *buf) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	const struct gpio_chip	*chip = dev_get_drvdata(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return sprintf(buf, "%d
+\backslash
+n", chip->base);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+static DEVICE_ATTR_RO(base);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static ssize_t label_show(struct device *dev,
+\end_layout
+
+\begin_layout Plain Layout
+
+			       struct device_attribute *attr, char *buf) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	const struct gpio_chip	*chip = dev_get_drvdata(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return sprintf(buf, "%s
+\backslash
+n", chip->label ? : "");
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+static DEVICE_ATTR_RO(label);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static ssize_t ngpio_show(struct device *dev,
+\end_layout
+
+\begin_layout Plain Layout
+
+			       struct device_attribute *attr, char *buf) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	const struct gpio_chip	*chip = dev_get_drvdata(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return sprintf(buf, "%u
+\backslash
+n", chip->ngpio);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+static DEVICE_ATTR_RO(ngpio);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+EXPORT
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+/*
+\end_layout
+
+\begin_layout Plain Layout
+
+ * /sys/class/gpio/export ...
+ write-only
+\end_layout
+
+\begin_layout Plain Layout
+
+ *	integer N ...
+ number of GPIO to export (full access)
+\end_layout
+
+\begin_layout Plain Layout
+
+ * /sys/class/gpio/unexport ...
+ write-only
+\end_layout
+
+\begin_layout Plain Layout
+
+ *	integer N ...
+ number of GPIO to unexport
+\end_layout
+
+\begin_layout Plain Layout
+
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+static ssize_t export_store(struct class *class,
+\end_layout
+
+\begin_layout Plain Layout
+
+				struct class_attribute *attr,
+\end_layout
+
+\begin_layout Plain Layout
+
+				const char *buf, size_t len) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	long			gpio;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_desc	*desc;
+\end_layout
+
+\begin_layout Plain Layout
+
+	int			status;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	//string to int
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = kstrtol(buf, 0, &gpio);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status < 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+		goto done;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	desc = gpio_to_desc(gpio);
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* reject invalid GPIOs */
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!desc) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		pr_warn("%s: invalid GPIO %ld
+\backslash
+n", __func__, gpio);
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -EINVAL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* No extra locking here; FLAG_SYSFS just signifies that the
+\end_layout
+
+\begin_layout Plain Layout
+
+	 * request and export were done by on behalf of userspace, so
+\end_layout
+
+\begin_layout Plain Layout
+
+	 * they may be undone on its behalf too.
+\end_layout
+
+\begin_layout Plain Layout
+
+	 */
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = gpiod_request(desc, "sysfs");
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status < 0) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (status == -EPROBE_DEFER)
+\end_layout
+
+\begin_layout Plain Layout
+
+			status = -ENODEV;
+\end_layout
+
+\begin_layout Plain Layout
+
+		goto done;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = gpiod_export(desc, true);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status < 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+		gpiod_free(desc);
+\end_layout
+
+\begin_layout Plain Layout
+
+	else
+\end_layout
+
+\begin_layout Plain Layout
+
+		set_bit(FLAG_SYSFS, &desc->flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+done:
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status)
+\end_layout
+
+\begin_layout Plain Layout
+
+		pr_debug("%s: status %d
+\backslash
+n", __func__, status);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return status ? : len;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+struct gpio_desc *gpio_to_desc(unsigned gpio) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_chip *chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned long flags;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	spin_lock_irqsave(&gpio_lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	//GPIO0 pin 3 = 504 + 3 = 507
+\end_layout
+
+\begin_layout Plain Layout
+
+	list_for_each_entry(chip, &gpio_chips, list) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		//GPIO0 base = 504 gpio = 507 ngpio = 8
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (chip->base <= gpio && chip->base + chip->ngpio > gpio) {
+\end_layout
+
+\begin_layout Plain Layout
+
+			spin_unlock_irqrestore(&gpio_lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+			return &chip->desc[gpio - chip->base];
+\end_layout
+
+\begin_layout Plain Layout
+
+		}
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	spin_unlock_irqrestore(&gpio_lock, flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!gpio_is_valid(gpio))
+\end_layout
+
+\begin_layout Plain Layout
+
+		WARN(1, "invalid GPIO %d
+\backslash
+n", gpio);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return NULL;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+int gpiod_export(struct gpio_desc *desc, bool direction_may_change){
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_chip	*chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpiod_data	*data;
+\end_layout
+
+\begin_layout Plain Layout
+
+	[...]
+\end_layout
+
+\begin_layout Plain Layout
+
+	chip = desc->chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	[...]
+\end_layout
+
+\begin_layout Plain Layout
+
+	data = kzalloc(sizeof(*data), GFP_KERNEL);
+\end_layout
+
+\begin_layout Plain Layout
+
+	data->desc = desc;
+\end_layout
+
+\begin_layout Plain Layout
+
+	mutex_init(&data->mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+	// si en nuestro driver hemos creado funciones para direction_input y direction
+_output
+\end_layout
+
+\begin_layout Plain Layout
+
+	// estamos estableciendo que el GPIO puede cambiar su direccion y ser I/O
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (chip->direction_input && chip->direction_output)
+\end_layout
+
+\begin_layout Plain Layout
+
+		data->direction_can_change = direction_may_change;
+\end_layout
+
+\begin_layout Plain Layout
+
+	else
+\end_layout
+
+\begin_layout Plain Layout
+
+		data->direction_can_change = false;
+\end_layout
+
+\begin_layout Plain Layout
+
+	
+\end_layout
+
+\begin_layout Plain Layout
+
+	[...]
+\end_layout
+
+\begin_layout Plain Layout
+
+	//creamos el gpio en /sys con gpio%d descriptor, GPIO0 3 = gpio507
+\end_layout
+
+\begin_layout Plain Layout
+
+	dev = device_create_with_groups(&gpio_class, chip->dev,
+\end_layout
+
+\begin_layout Plain Layout
+
+					MKDEV(0, 0), data, gpio_groups,
+\end_layout
+
+\begin_layout Plain Layout
+
+					ioname ? ioname : "gpio%u",
+\end_layout
+
+\begin_layout Plain Layout
+
+					desc_to_gpio(desc));
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+DIRECCION
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+int gpiod_get_direction(struct gpio_desc *desc) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_chip	*chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	unsigned		offset;
+\end_layout
+
+\begin_layout Plain Layout
+
+	int			status = -EINVAL;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	chip = gpiod_to_chip(desc);
+\end_layout
+
+\begin_layout Plain Layout
+
+	offset = gpio_chip_hwgpio(desc);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!chip->get_direction)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return status;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	//vemos la definicion de get_direction implementada por nuestro driver
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = chip->get_direction(chip, offset);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status > 0) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		/* GPIOF_DIR_IN, or other positive */
+\end_layout
+
+\begin_layout Plain Layout
+
+		status = 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+		clear_bit(FLAG_IS_OUT, &desc->flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status == 0) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		/* GPIOF_DIR_OUT */
+\end_layout
+
+\begin_layout Plain Layout
+
+		set_bit(FLAG_IS_OUT, &desc->flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	return status;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static ssize_t direction_show(struct device *dev,
+\end_layout
+
+\begin_layout Plain Layout
+
+		struct device_attribute *attr, char *buf) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpiod_data *data = dev_get_drvdata(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_desc *desc = data->desc;
+\end_layout
+
+\begin_layout Plain Layout
+
+	ssize_t			status;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	mutex_lock(&data->mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+	gpiod_get_direction(desc);
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = sprintf(buf, "%s
+\backslash
+n",
+\end_layout
+
+\begin_layout Plain Layout
+
+			test_bit(FLAG_IS_OUT, &desc->flags)? "out" : "in");
+\end_layout
+
+\begin_layout Plain Layout
+
+	mutex_unlock(&data->mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return status;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+--------------------------------------------------------------------------------
+-----
+\end_layout
+
+\begin_layout Plain Layout
+
+/* * gpiod_direction_input - set the GPIO direction to input */
+\end_layout
+
+\begin_layout Plain Layout
+
+int gpiod_direction_input(struct gpio_desc *desc) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_chip	*chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	int			status = -EINVAL;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!desc || !desc->chip) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		pr_warn("%s: invalid GPIO
+\backslash
+n", __func__);
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -EINVAL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	chip = desc->chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	// se debe haber implementado en el driver el getValue y el direction_input
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!chip->get || !chip->direction_input) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		gpiod_warn(desc,
+\end_layout
+
+\begin_layout Plain Layout
+
+			"%s: missing get() or direction_input() operations
+\backslash
+n",
+\end_layout
+
+\begin_layout Plain Layout
+
+			__func__);
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -EIO;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	//hacemos la preparacion en nuestro driver
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = chip->direction_input(chip, gpio_chip_hwgpio(desc));
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status == 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+		clear_bit(FLAG_IS_OUT, &desc->flags); //se cambia el valor en el GPIO
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	trace_gpio_direction(desc_to_gpio(desc), 1, status);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return status;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static int _gpiod_direction_output_raw(struct gpio_desc *desc, int value)
+ {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_chip	*chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	int			status = -EINVAL;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* GPIOs used for IRQs shall not be set as output */
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (test_bit(FLAG_USED_AS_IRQ, &desc->flags)) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		gpiod_err(desc,
+\end_layout
+
+\begin_layout Plain Layout
+
+			  "%s: tried to set a GPIO tied to an IRQ as output
+\backslash
+n",
+\end_layout
+
+\begin_layout Plain Layout
+
+			  __func__);
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -EIO;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* Open drain pin should not be driven to 1 */
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (value && test_bit(FLAG_OPEN_DRAIN,  &desc->flags))
+\end_layout
+
+\begin_layout Plain Layout
+
+		return gpiod_direction_input(desc);
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* Open source pin should not be driven to 0 */
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!value && test_bit(FLAG_OPEN_SOURCE,  &desc->flags))
+\end_layout
+
+\begin_layout Plain Layout
+
+		return gpiod_direction_input(desc);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	chip = desc->chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	// se debe haber implementado en el driver el setValue y el direction_output
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!chip->set || !chip->direction_output) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		gpiod_warn(desc,
+\end_layout
+
+\begin_layout Plain Layout
+
+		       "%s: missing set() or direction_output() operations
+\backslash
+n",
+\end_layout
+
+\begin_layout Plain Layout
+
+		       __func__);
+\end_layout
+
+\begin_layout Plain Layout
+
+		return -EIO;
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = chip->direction_output(chip, gpio_chip_hwgpio(desc), value);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (status == 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+		set_bit(FLAG_IS_OUT, &desc->flags);
+\end_layout
+
+\begin_layout Plain Layout
+
+	trace_gpio_value(desc_to_gpio(desc), 0, value);
+\end_layout
+
+\begin_layout Plain Layout
+
+	trace_gpio_direction(desc_to_gpio(desc), 0, status);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return status;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+//se cambia la direccion y se inicializa su valor
+\end_layout
+
+\begin_layout Plain Layout
+
+static ssize_t direction_store(struct device *dev,
+\end_layout
+
+\begin_layout Plain Layout
+
+		struct device_attribute *attr, const char *buf, size_t size) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpiod_data *data = dev_get_drvdata(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_desc *desc = data->desc;
+\end_layout
+
+\begin_layout Plain Layout
+
+	ssize_t			status;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	mutex_lock(&data->mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (sysfs_streq(buf, "high"))
+\end_layout
+
+\begin_layout Plain Layout
+
+		status = gpiod_direction_output_raw(desc, 1);
+\end_layout
+
+\begin_layout Plain Layout
+
+	else if (sysfs_streq(buf, "out") || sysfs_streq(buf, "low"))
+\end_layout
+
+\begin_layout Plain Layout
+
+		status = gpiod_direction_output_raw(desc, 0);
+\end_layout
+
+\begin_layout Plain Layout
+
+	else if (sysfs_streq(buf, "in"))
+\end_layout
+
+\begin_layout Plain Layout
+
+		status = gpiod_direction_input(desc);
+\end_layout
+
+\begin_layout Plain Layout
+
+	else
+\end_layout
+
+\begin_layout Plain Layout
+
+		status = -EINVAL;
+\end_layout
+
+\begin_layout Plain Layout
+
+	mutex_unlock(&data->mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return status ? : size;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+VALOR
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+//llamada del sysfs
+\end_layout
+
+\begin_layout Plain Layout
+
+static ssize_t value_show(struct device *dev,
+\end_layout
+
+\begin_layout Plain Layout
+
+		struct device_attribute *attr, char *buf) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpiod_data *data = dev_get_drvdata(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_desc *desc = data->desc;
+\end_layout
+
+\begin_layout Plain Layout
+
+	ssize_t			status;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	mutex_lock(&data->mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+	status = sprintf(buf, "%d
+\backslash
+n", gpiod_get_value_cansleep(desc));
+\end_layout
+
+\begin_layout Plain Layout
+
+	mutex_unlock(&data->mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return status;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+int gpiod_get_value_cansleep(const struct gpio_desc *desc) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	int value;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	might_sleep_if(extra_checks);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!desc)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	value = _gpiod_get_raw_value(desc);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (value < 0)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return value;
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (test_bit(FLAG_ACTIVE_LOW, &desc->flags))
+\end_layout
+
+\begin_layout Plain Layout
+
+		value = !value;
+\end_layout
+
+\begin_layout Plain Layout
+
+	return value;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static int _gpiod_get_raw_value(const struct gpio_desc *desc) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_chip	*chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	int offset; 	int value;
+\end_layout
+
+\begin_layout Plain Layout
+
+	chip = desc->chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	offset = gpio_chip_hwgpio(desc);
+\end_layout
+
+\begin_layout Plain Layout
+
+	//llamamos a la funcion get de nuestro driver
+\end_layout
+
+\begin_layout Plain Layout
+
+	value = chip->get ? chip->get(chip, offset) : -EIO;
+\end_layout
+
+\begin_layout Plain Layout
+
+	/*
+\end_layout
+
+\begin_layout Plain Layout
+
+	 * FIXME: fix all drivers to clamp to [0,1] or return negative,
+\end_layout
+
+\begin_layout Plain Layout
+
+	 * then change this to:
+\end_layout
+
+\begin_layout Plain Layout
+
+	 * value = value < 0 ? value : !!value;
+\end_layout
+
+\begin_layout Plain Layout
+
+	 * so we can properly propagate error codes.
+\end_layout
+
+\begin_layout Plain Layout
+
+	 */
+\end_layout
+
+\begin_layout Plain Layout
+
+	value = !!value;
+\end_layout
+
+\begin_layout Plain Layout
+
+	trace_gpio_value(desc_to_gpio(desc), 1, value);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return value;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+----------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static ssize_t value_store(struct device *dev,
+\end_layout
+
+\begin_layout Plain Layout
+
+		struct device_attribute *attr, const char *buf, size_t size) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpiod_data *data = dev_get_drvdata(dev);
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_desc *desc = data->desc;
+\end_layout
+
+\begin_layout Plain Layout
+
+	ssize_t			status;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	mutex_lock(&data->mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+	//comprobar que el GPIO sea de salida
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!test_bit(FLAG_IS_OUT, &desc->flags)) {
+\end_layout
+
+\begin_layout Plain Layout
+
+		status = -EPERM;
+\end_layout
+
+\begin_layout Plain Layout
+
+	} else {
+\end_layout
+
+\begin_layout Plain Layout
+
+		long		value;
+\end_layout
+
+\begin_layout Plain Layout
+
+		status = kstrtol(buf, 0, &value);
+\end_layout
+
+\begin_layout Plain Layout
+
+		if (status == 0) {
+\end_layout
+
+\begin_layout Plain Layout
+
+			gpiod_set_value_cansleep(desc, value);
+\end_layout
+
+\begin_layout Plain Layout
+
+			status = size;
+\end_layout
+
+\begin_layout Plain Layout
+
+		}
+\end_layout
+
+\begin_layout Plain Layout
+
+	}
+\end_layout
+
+\begin_layout Plain Layout
+
+	mutex_unlock(&data->mutex);
+\end_layout
+
+\begin_layout Plain Layout
+
+	return status;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+void gpiod_set_value_cansleep(struct gpio_desc *desc, int value) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	might_sleep_if(extra_checks);
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (!desc)
+\end_layout
+
+\begin_layout Plain Layout
+
+		return;
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (test_bit(FLAG_ACTIVE_LOW, &desc->flags))
+\end_layout
+
+\begin_layout Plain Layout
+
+		value = !value;
+\end_layout
+
+\begin_layout Plain Layout
+
+	_gpiod_set_raw_value(desc, value);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+static void _gpiod_set_raw_value(struct gpio_desc *desc, bool value) {
+\end_layout
+
+\begin_layout Plain Layout
+
+	struct gpio_chip	*chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	chip = desc->chip;
+\end_layout
+
+\begin_layout Plain Layout
+
+	trace_gpio_value(desc_to_gpio(desc), 0, value);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	if (test_bit(FLAG_OPEN_DRAIN, &desc->flags))
+\end_layout
+
+\begin_layout Plain Layout
+
+		_gpio_set_open_drain_value(desc, value);
+\end_layout
+
+\begin_layout Plain Layout
+
+	else if (test_bit(FLAG_OPEN_SOURCE, &desc->flags))
+\end_layout
+
+\begin_layout Plain Layout
+
+		_gpio_set_open_source_value(desc, value);
+\end_layout
+
+\begin_layout Plain Layout
+
+	else 
+\end_layout
+
+\begin_layout Plain Layout
+
+		chip->set(chip, gpio_chip_hwgpio(desc), value);//por defecto llama a la
+ funcion set de nuestro driver
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
