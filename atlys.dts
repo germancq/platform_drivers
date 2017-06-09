@@ -6,7 +6,8 @@
   interrupt-parent = <&pic>;
 
   chosen {
-    bootargs = "console=uart,mmio,0x90000000,115200";
+  bootargs = "console=uart,mmio,0x90000000,115200 console=tty0
+              video=ocfb:640x480-16@60";
   };
 
   memory@0 {
@@ -64,4 +65,16 @@
 		gpio-controller;
 		xlnx,gpio-width = <8>;
 	};
+
+  ps20: keyboard@94000000 {
+    compatible = "opencores,ocps2";
+    reg = <0x94000000 0x8>;
+    interrupts = <5>;
+  };
+
+  fb0: ocfb@97000000 {
+    compatible = "opencores,ocfb", "ocfb";
+    reg = <0x97000000 0x1000>;
+    interrupts = <8>;
+  };
 };
